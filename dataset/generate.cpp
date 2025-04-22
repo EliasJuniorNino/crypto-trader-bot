@@ -186,7 +186,7 @@ int isRowValid(const stringstream &rowStream)
 
 void generateCSV(const vector<FearTick> &fearTicks, const vector<Crypto> &cryptos, const map<string, vector<PriceHistory>> &priceMap)
 {
-    ofstream file("dataset_cpp.csv");
+    ofstream file("data/dataset_cpp.csv");
     file << "datetime,year,month,day,fear_api_alternative_me,fear_coinmarketcap";
     for (const auto &crypto : cryptos)
     {
@@ -263,10 +263,10 @@ int main()
     {
         map<string, string> env = loadEnvFile(".env");
 
-        string host = "tcp://" + env["DB_HOST"] + ":" + env["DB_PORT"];
-        string user = env["DB_USER"];
-        string pass = env["DB_PASS"];
-        string dbName = env["DB_NAME"];
+        string host = "tcp://" + env["DATABASE_HOST"] + ":" + env["DATABASE_PORT"];
+        string user = env["DATABASE_USER"];
+        string pass = env["DATABASE_PASSWORD"];
+        string dbName = env["DATABASE_DBNAME"];
 
         sql::mysql::MySQL_Driver *driver = sql::mysql::get_mysql_driver_instance();
         sql::Connection *con = driver->connect(host, user, pass);

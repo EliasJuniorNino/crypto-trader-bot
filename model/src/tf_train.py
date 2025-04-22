@@ -8,6 +8,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from sklearn.preprocessing import StandardScaler
 
+from model.database import connect_db
+
 # Habilitar GPU
 physical_devices = tf.config.list_physical_devices('GPU')
 print('physical_devices', physical_devices)
@@ -51,26 +53,6 @@ def train_model(df, coin):
     model_path = f"models_tf/model_{coin}.keras"
     model.save(model_path)
     print(f"Modelo salvo em {model_path}")
-
-
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "trader",
-    "password": "trader",
-    "database": "crypto_trader"
-}
-
-
-def connect_db():
-    """Conecta ao banco de dados e retorna a conexão."""
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        print("Erro ao conectar ao banco:", e)
-        return None
 
 
 def get_data(db_connection):

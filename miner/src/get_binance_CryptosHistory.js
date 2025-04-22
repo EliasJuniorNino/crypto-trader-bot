@@ -142,7 +142,7 @@ async function insertPriceHistory(connection, priceHistory, crypto) {
 
     const cryptos = await fetchCryptos(connection);
     const offset = 0; // ex: 1 is two weeks ago
-    const batchSize = 3; // Dias de dados buscados
+    const batchSize = 30; // Dias de dados buscados
 
     for (let i = 0; i < batchSize; i++) {
       for (const crypto of cryptos) {

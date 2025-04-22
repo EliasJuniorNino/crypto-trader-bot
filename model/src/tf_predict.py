@@ -7,25 +7,7 @@ import os
 import joblib
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "trader",
-    "password": "trader",
-    "database": "crypto_trader"
-}
-
-
-def connect_db():
-    """Conecta ao banco de dados e retorna a conexão."""
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        print("Erro ao conectar ao banco:", e)
-        return None
-
+from model.database import connect_db
 
 def get_test_data(db_connection):
     """Busca os dados do banco, realiza pré-processamento e retorna DataFrame com as moedas."""

@@ -13,14 +13,3 @@ services:
       - "3306:3306"
     volumes:
       - ./data/mysql_data:/var/lib/mysql
-
-  mysql-backup:
-    build:
-      context: . # Caminho onde está o Dockerfile (diretório atual)
-      dockerfile: Dockerfile # Caso o nome do Dockerfile seja diferente
-    container_name: mysql-backup
-    volumes:
-      - ./backups:/backups # Volume para persistir os backups
-    entrypoint: /bin/sh -c "while true; do sleep 86400; done" # Loop para manter o container rodando
-    depends_on:
-      - mySQL

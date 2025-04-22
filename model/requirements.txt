@@ -2,6 +2,7 @@ mysql-connector-python
 pandas
 joblib
 scikit-learn
+python-dotenv
 
 # TensorFlow com CUDA para Windows
 tensorflow[and-cuda] ; sys_platform == "win32"
