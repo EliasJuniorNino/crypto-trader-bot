@@ -8,6 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+from model.database import connect_db
+
 
 # Train model
 def train_model(df, column_index):
@@ -37,26 +39,6 @@ def train_model(df, column_index):
     print(f"RMSE: {rmse:.6f}")
 
     return model, scaler
-
-
-# Configurações do Banco de Dados
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "trader",
-    "password": "trader",
-    "database": "crypto_trader"
-}
-
-
-def connect_db():
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        if connection.is_connected():
-            return connection
-    except Error as e:
-        print("Erro ao conectar ao banco:", e)
-        return None
 
 
 def get_data(db_connection):
