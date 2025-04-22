@@ -1,0 +1,13 @@
+mysql-connector-python
+pandas
+joblib
+scikit-learn
+
+# TensorFlow com CUDA para Windows
+tensorflow[and-cuda] ; sys_platform == "win32"
+
+# TensorFlow com CUDA para Linux
+tensorflow[and-cuda] ; sys_platform == "linux"
+
+# TensorFlow com Metal para M1
+tensorflow-metal ; sys_platform == "darwin"

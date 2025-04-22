@@ -1,0 +1,11 @@
+.venv
+venv
+.idea
+.idea/
+.idea/*
+.idea/**
+*env.py
+/data/
+*.h5
+*.keras
+*.pkl

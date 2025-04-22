@@ -1,0 +1,8 @@
+data
+.env
+env.py
+**env.py
+*.log
+node_modules
+.venv/
+.build/
