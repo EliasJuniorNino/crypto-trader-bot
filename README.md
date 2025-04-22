@@ -53,12 +53,6 @@ Para executar o bot localmente:
    docker-compose up --build
    ```
 
-## ⚠️ Aviso
-
-Este projeto é destinado exclusivamente para fins educacionais e de experimentação.  
-Não é recomendado utilizá-lo em ambientes de produção ou com fundos reais.  
-O autor não se responsabiliza por quaisquer perdas ou danos decorrentes do uso deste software.
-
 ## 📄 Licença
 
 Este projeto está licenciado sob a Licença MIT. Consulte o arquivo [LICENSE](LICENSE) para obter mais informações.
