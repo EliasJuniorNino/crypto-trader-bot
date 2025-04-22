@@ -1,12 +1,11 @@
 # Crypto Trader Bot
 
-Um bot de trading automatizado para criptomoedas, desenvolvido com foco em aprendizado e experimentação.  
-Este projeto integra diversas tecnologias para operar no mercado de criptomoedas de forma autônoma.
+Códigos necessário para treinar o modelo de IA e executar o bot de trading automatizado.
 
 ## 📌 Visão Geral
 
-O **Crypto Trader Bot** é uma aplicação que visa automatizar operações de compra e venda de criptomoedas.  
-Utilizando APIs de exchanges, o bot analisa o mercado e executa ordens com base em estratégias predefinidas.
+O **Crypto Trader Bot** é uma aplicação que utiliza aprendizado de máquina para prever movimentos do mercado de criptomoedas com base na análise do índice de medo (Fear Index) e dados históricos de preços.  
+Com base nessa correlação, o bot executa ordens de compra e venda de forma autônoma.
 
 ## ⚙️ Tecnologias Utilizadas
 
