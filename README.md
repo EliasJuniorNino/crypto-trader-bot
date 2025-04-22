@@ -1,7 +1,3 @@
-Aqui está o texto atualizado para o README:
-
----
-
 # Crypto Trader Bot
 
 Scripts required to train the AI model and run the automated trading bot.
