@@ -1,13 +1,13 @@
 # Crypto Trader Bot
 
-Códigos necessário para treinar o modelo de IA e executar o bot de trading automatizado.
+Scripts required to train the AI model and run the automated trading bot.
 
-## 📌 Visão Geral
+## 📌 Overview
 
-O **Crypto Trader Bot** é uma aplicação que utiliza aprendizado de máquina para prever movimentos do mercado de criptomoedas com base na análise do índice de medo (Fear Index) e dados históricos de preços.  
-Com base nessa correlação, o bot executa ordens de compra e venda de forma autônoma.
+The **Crypto Trader Bot** is an application that uses machine learning to predict cryptocurrency market movements based on the analysis of the Fear Index and historical price data.  
+Based on this correlation, the bot autonomously executes buy and sell orders.
 
-## ⚙️ Tecnologias Utilizadas
+## ⚙️ Technologies Used
 
 - **Python**
 - **JavaScript (Node.js)**
@@ -15,43 +15,43 @@ Com base nessa correlação, o bot executa ordens de compra e venda de forma aut
 - **Docker**
 - **Shell Script**
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
-O projeto está organizado da seguinte forma:
+The project is organized as follows:
 
 ```
 crypto-trader-bot/
-├── .devcontainer/         # Configurações para ambiente de desenvolvimento
-├── .github/               # Workflows e configurações do GitHub
-├── .vscode/               # Configurações do Visual Studio Code
-├── scripts/               # Scripts auxiliares
-├── backup.sh              # Script de backup
-├── db_schema.sql          # Esquema do banco de dados
-├── docker-compose.yml     # Configuração do Docker Compose
-├── package.json           # Dependências do Node.js
-├── requirements.txt       # Dependências do Python
-└── ...                    # Outros arquivos e diretórios
+├── .devcontainer/         # Development environment configurations
+├── .github/               # GitHub workflows and configurations
+├── .vscode/               # Visual Studio Code configurations
+├── scripts/               # Helper scripts
+├── backup.sh              # Backup script
+├── db_schema.sql          # Database schema
+├── docker-compose.yml     # Docker Compose configuration
+├── package.json           # Node.js dependencies
+├── requirements.txt       # Python dependencies
+└── ...                    # Other files and directories
 ```
 
-## 🚀 Como Iniciar
+## 🚀 How to Get Started
 
-Para executar o bot localmente:
+To run the bot locally:
 
-1. Clone o repositório:
+1. Clone the repository:
 
    ```bash
    git clone https://github.com/EliasJuniorNino/crypto-trader-bot.git
    cd crypto-trader-bot
    ```
 
-2. Configure as variáveis de ambiente necessárias.
+2. Configure the necessary environment variables.
 
-3. Inicie os containers com Docker Compose:
+3. Start the containers with Docker Compose:
 
    ```bash
    docker-compose up --build
    ```
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a Licença MIT. Consulte o arquivo [LICENSE](LICENSE) para obter mais informações.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
