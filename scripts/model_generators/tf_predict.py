@@ -1,6 +1,4 @@
 from datetime import timedelta
-import mysql.connector
-from mysql.connector import Error
 import pandas as pd
 import numpy as np
 import os

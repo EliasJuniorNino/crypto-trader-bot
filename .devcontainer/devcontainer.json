@@ -17,7 +17,8 @@
 				"dbaeumer.vscode-eslint",
 				"donjayamanne.python-extension-pack",
 				"mechatroner.rainbow-csv",
-				"ms-vscode.cpptools-extension-pack"
+				"ms-vscode.cpptools-extension-pack",
+				"formulahendry.code-runner"
 			],
 			"settings": {
 				"editor.formatOnSave": true

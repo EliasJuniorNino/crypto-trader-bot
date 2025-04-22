@@ -186,7 +186,7 @@ int isRowValid(const stringstream &rowStream)
 
 void generateCSV(const vector<FearTick> &fearTicks, const vector<Crypto> &cryptos, const map<string, vector<PriceHistory>> &priceMap)
 {
-    ofstream file("data/dataset_cpp.csv");
+    ofstream file("data/dataset.csv");
     file << "datetime,year,month,day,fear_api_alternative_me,fear_coinmarketcap";
     for (const auto &crypto : cryptos)
     {
@@ -198,8 +198,7 @@ void generateCSV(const vector<FearTick> &fearTicks, const vector<Crypto> &crypto
     for (const auto &fearTick : fearTicks)
     {
         stringstream row;
-        row << fearTick.datetimeStr << ","
-            << fearTick.year << ","
+        row << fearTick.year << ","
             << fearTick.month << ","
             << fearTick.day << ","
             << fearTick.fear_api_alternative_me << ","

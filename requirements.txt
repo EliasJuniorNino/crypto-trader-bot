@@ -3,6 +3,7 @@ pandas
 joblib
 scikit-learn
 python-dotenv
+keras
 
 # TensorFlow com CUDA para Windows
 tensorflow[and-cuda] ; sys_platform == "win32"

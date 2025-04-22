@@ -6,3 +6,17 @@ env.py
 node_modules
 .venv/
 .build/
+node_modules
+yarn.lock
+.env
+.venv
+venv
+.idea
+.idea/
+.idea/*
+.idea/**
+*env.py
+/data/
+*.h5
+*.keras
+*.pkl

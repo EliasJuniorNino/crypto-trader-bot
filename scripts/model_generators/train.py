@@ -69,7 +69,7 @@ def train_model(df, coin):
 
 def main():
     """Função principal para carregar dados e treinar modelos."""
-    file_path = "../dataset.csv"  # Nome do arquivo do dataset
+    file_path = "data/dataset.csv"  # Nome do arquivo do dataset
     df, coin_names = load_data(file_path)
 
     if df is not None and coin_names:

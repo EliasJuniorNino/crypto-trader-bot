@@ -1,11 +1,9 @@
-import mysql.connector
 from keras import Input
-from mysql.connector import Error
 import pandas as pd
 import os
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
 from sklearn.preprocessing import StandardScaler
 
 from model.database import connect_db

@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get install libboost-all-dev -y
 RUN apt-get install libmysqlcppconn-dev -y
+RUN apt-get install python3.10-venv -y
 
 # Install CUDA development tools
 RUN apt-get update && apt-get install -y \

@@ -1,6 +1,4 @@
-import mysql.connector
-from mysql.connector import Error
-from datetime import datetime, timedelta
+from datetime import timedelta
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -8,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from model.database import connect_db
+from database import connect_db
 
 
 # Train model

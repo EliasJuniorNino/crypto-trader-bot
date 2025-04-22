@@ -1,4 +1,3 @@
-import pandas as pd
 import os
 import joblib
 from sklearn.metrics import mean_squared_error, mean_absolute_error
