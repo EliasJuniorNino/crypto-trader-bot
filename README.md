@@ -9,7 +9,7 @@ Scripts required to train the AI model and run the automated trading bot.
 ## 📌 Overview
 
 The **Crypto Trader Bot** is an application that uses machine learning to predict cryptocurrency market movements based on the analysis of the Fear Index and historical price data.  
-The scripts are designed to find a correlation between the **Fear Index** and the price of each cryptocurrency. Based on this correlation, the bot autonomously executes buy and sell orders.
+The scripts are designed to find a correlation between the **Fear Index** and the price of each cryptocurrency.
 
 ## ⚙️ Technologies Used
 
