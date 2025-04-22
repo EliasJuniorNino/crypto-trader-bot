@@ -3,9 +3,29 @@ import joblib
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import logging
 import requests
+from decimal import Decimal, getcontext
+import pandas as pd
+import numpy as np
+
+from database import connect_db
+
+# Configuração de precisão decimal
+getcontext().prec = 50
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+def get_cryptos_names():
+    db_conn = connect_db()
+    cursor = db_conn.cursor()
+    
+    SQL_QUERY = "SELECT c.symbol FROM cryptos c JOIN exchanges_cryptos ec ON c.id = ec.crypto_id JOIN exchanges e ON ec.exchange_id = e.id WHERE LOWER(e.name) LIKE '%binance%';"
+    cursor.execute(SQL_QUERY)
+    criptos = cursor.fetchall()
+    criptos_names = []
+    for (coin,) in criptos:
+        criptos_names.append(coin)
+    return criptos_names
 
 def get_crypto_min_max():
     url = "https://api.binance.com/api/v3/ticker/24hr"
@@ -15,20 +35,22 @@ def get_crypto_min_max():
         data = response.json()
         crypto_min_max = {}
 
+        criptos_names = get_cryptos_names()
+
         for item in data:
             symbol = item["symbol"]
-            high_price = float(item["highPrice"])
-            low_price = float(item["lowPrice"])
+            if symbol not in criptos_names:
+                continue
+            high_price = Decimal(item["highPrice"])
+            low_price = Decimal(item["lowPrice"])
             crypto_min_max[symbol] = {"max": high_price, "min": low_price}
 
         return crypto_min_max
     else:
-        print("Erro ao acessar a API da Binance")
+        logging.error("Erro ao acessar a API da Binance")
         return None
 
-
 def load_model(coin):
-    """Carrega o modelo treinado a partir de um arquivo."""
     try:
         model_path = f"models/model_{coin}.pkl"
         if os.path.exists(model_path):
@@ -41,34 +63,54 @@ def load_model(coin):
     except Exception as e:
         logging.error(f"Erro ao carregar o modelo para {coin}: {e}")
         return None
+    
+def get_data_frame():
+    try:
+        df_path = "data/dataset.csv"
+        if os.path.exists(df_path):
+            df = pd.read_csv(df_path)
+            logging.info(f"DataFrame carregado de {df_path} com sucesso.")
+            return df
+        else:
+            logging.error(f"Arquivo CSV não encontrado: {df_path}")
+            return pd.DataFrame()
+    except Exception as e:
+        logging.error(f"Erro ao carregar o DataFrame: {e}")
+        return pd.DataFrame()
 
 def predict_prices(model, df, coin):
-    """Usa o modelo carregado para prever os preços da criptomoeda."""
     try:
-        # Separa features (X) e target (y)
-        X = df.copy()
-        y = df[[f"{coin}_max_price", f"{coin}_min_price"]]
+        X = df.drop(columns=[f"{coin}_max_price", f"{coin}_min_price"], errors='ignore').astype(np.float64)
+        y = df[[f"{coin}_max_price", f"{coin}_min_price"]].astype(np.float64)
 
-        # Faz as previsões
         y_pred = model.predict(X)
 
-        # Avalia as previsões
-        mse = mean_squared_error(y, y_pred)
-        mae = mean_absolute_error(y, y_pred)
-        logging.info(f"Previsões para {coin} com MSE: {mse:.4f}, MAE: {mae:.4f}")
+        mse = Decimal(str(mean_squared_error(y, y_pred)))
+        mae = Decimal(str(mean_absolute_error(y, y_pred)))
+        logging.info(f"Previsões para {coin} com MSE: {mse:.50f}, MAE: {mae:.50f}")
 
         return {
             'coin': coin,
-            'predict': y_pred[-1]
+            'predict': [Decimal(str(val)) for val in y_pred[-1]]
         }
 
     except Exception as e:
         logging.error(f"Erro ao fazer previsões para {coin}: {e}")
-
+        return None
 
 if __name__ == "__main__":
     min_max_data = get_crypto_min_max()
 
+    # Exemplo: simulando um DataFrame de entrada
+    # Este trecho precisa ser substituído por dados reais
+    df_simulado = pd.DataFrame(get_data_frame())
+
     if min_max_data:
-        for symbol, prices in min_max_data.items():
-            print(f"{symbol}: Máximo: {prices['max']} | Mínimo: {prices['min']}")
+        for symbol in min_max_data.keys():
+            model = load_model(symbol)
+            if model:
+                result = predict_prices(model, df_simulado, symbol)
+                if result:
+                    print(f"Previsão para {symbol}:")
+                    print(f"  Máximo previsto: {result['predict'][0]:.50f}")
+                    print(f"  Mínimo previsto: {result['predict'][1]:.50f}")
