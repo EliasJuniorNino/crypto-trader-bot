@@ -71,28 +71,41 @@ async function fetchCryptos(connection) {
 }
 
 // Buscar histórico de preços da Binance
-async function fetchCryptoHistory(connection, symbol, DAYS_OFFSET) {
+async function fetchCryptoHistory(connection, symbol, START_TIME, END_TIME) {
   const BINANCE_API_URL = 'https://api.binance.com/api/v3/klines';
-  const END_TIME = moment().utc().startOf('day').subtract(DAYS_OFFSET, 'days');
-  const START_TIME = END_TIME.clone().subtract(1, 'days');
-
-  const params = {
-    symbol: `${symbol}USDT`,
-    interval: '1m',
-    limit: 1500,
-    startTime: START_TIME.valueOf(),
-    endTime: END_TIME.valueOf()
-  };
-
-  logInfo(`Coletando ${symbol} de ${START_TIME.format()} até ${END_TIME.format()}`);
-
+  const symbolParam = `${symbol}USDT`
   try {
-    const response = await axios.get(BINANCE_API_URL, { params });
-    return response.data.map(entry => ({
-      OpenTime: entry[0], Open: entry[1], High: entry[2], Low: entry[3], Close: entry[4],
-      Volume: entry[5], CloseTime: entry[6], BaseAssetVolume: entry[7], NumberOfTrades: entry[8],
-      TakerBuyVolume: entry[9], TakerBuyBaseAssetVolume: entry[10]
-    }));
+    let pricesHistory = []
+    let endDate = END_TIME.clone()
+    while(endDate.isAfter(START_TIME)) {
+      try {
+        let startDate = endDate.clone().subtract(6, 'hours')
+        const limit = 10000
+        const params = {
+          symbol: symbolParam,
+          interval: '1m',
+          limit,
+          startTime: startDate.valueOf(),
+          endTime: endDate.valueOf()
+        };
+        const response = await axios.get(BINANCE_API_URL, { params });
+
+        startTimeStr = startDate.format('YYYY-MM-DD')
+        endTimeStr = endDate.format('YYYY-MM-DD')
+        logInfo(`Collected: ${startTimeStr} > ${endTimeStr} | ${response.data?.length} of ${symbol}.`);
+
+        pricesHistory = [
+          ...pricesHistory,
+          ...response.data.map(entry => ({
+            OpenTime: entry[0], Open: entry[1], High: entry[2], Low: entry[3], Close: entry[4],
+            Volume: entry[5], CloseTime: entry[6], BaseAssetVolume: entry[7], NumberOfTrades: entry[8],
+            TakerBuyVolume: entry[9], TakerBuyBaseAssetVolume: entry[10]
+          }))
+        ]
+      } finally { }
+      endDate.subtract(6, 'hours')
+    }
+    return pricesHistory;
   } catch (error) {
     logError(`Falha ao obter dados da Binance para ${symbol}`, error);
     if (error.response?.status === 400) {
@@ -109,11 +122,8 @@ async function fetchCryptoHistory(connection, symbol, DAYS_OFFSET) {
 // Inserir preços no banco de dados
 async function insertPriceHistory(connection, priceHistory, crypto) {
   if (!priceHistory || priceHistory.length === 0) {
-    logInfo(`Nenhum histórico de preços disponível para ${crypto.symbol}.`);
     return;
   }
-
-  logInfo(`Inserindo ${priceHistory.length} registros para ${crypto.symbol}`);
 
   const insertQuery = `
     INSERT INTO cryptos_price_history (
@@ -145,7 +155,6 @@ async function insertPriceHistory(connection, priceHistory, crypto) {
 
   try {
     await connection.query(insertQuery, [values]);
-    logInfo(`Histórico de ${crypto.symbol} armazenado com sucesso.`);
   } catch (error) {
     logError(`Erro ao inserir histórico de ${crypto.symbol}`, error);
   }
@@ -158,15 +167,22 @@ async function insertPriceHistory(connection, priceHistory, crypto) {
     if (!connection) return;
 
     const cryptos = await fetchCryptos(connection);
-    const offset = 1; // ex: batchSize offset
-    const batchSize = 1; // Dias de dados buscados
+    const daysOffset = 0; // ex: batchSize offset
+    const batchSize = 90; // Dias de dados buscados
 
     for (let i = 0; i < batchSize; i++) {
+      const END_TIME = moment().utc().startOf('day').subtract(daysOffset, 'days');
+      const START_TIME = END_TIME.clone().subtract(batchSize, 'days');
+
+      startTimeStr = START_TIME.format('YYYY-MM-DD')
+      endTimeStr = END_TIME.format('YYYY-MM-DD')
+
+      logInfo(`Interval: ${startTimeStr} > ${endTimeStr} | ${cryptos.length} Cryptos.`);
+
       for (const crypto of cryptos) {
-        const history = await fetchCryptoHistory(connection, crypto.symbol, (offset * batchSize) - i);
-        if (history) {
-          await insertPriceHistory(connection, history, crypto);
-        }
+        const history = await fetchCryptoHistory(connection, crypto.symbol, START_TIME, END_TIME);
+        logInfo(`${startTimeStr} > ${endTimeStr} | ${Number(history?.length)} history for ${crypto.symbol}.`);
+        await insertPriceHistory(connection, history, crypto);
       }
     }
 
