@@ -51,3 +51,31 @@ CREATE TABLE IF NOT EXISTS fear_index (
     value DECIMAL(10,4) NOT NULL,
     UNIQUE (source, target, date)
 );
+
+ALTER TABLE cryptos_price_history
+ADD COLUMN open_time BIGINT NOT NULL,
+ADD COLUMN open_price DECIMAL(38,18) NOT NULL,
+ADD COLUMN high_price DECIMAL(38,18) NOT NULL,
+ADD COLUMN low_price DECIMAL(38,18) NOT NULL,
+ADD COLUMN close_price DECIMAL(38,18) NOT NULL,
+ADD COLUMN volume DECIMAL(38,18) NOT NULL,
+ADD COLUMN close_time BIGINT NOT NULL,
+ADD COLUMN base_asset_volume DECIMAL(38,18) NOT NULL,
+ADD COLUMN number_of_trades INT NOT NULL,
+ADD COLUMN taker_buy_volume DECIMAL(38,18) NOT NULL,
+ADD COLUMN taker_buy_base_asset_volume DECIMAL(38,18) NOT NULL;
+
+ALTER TABLE exchanges_cryptos
+ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1;
+
+ALTER TABLE cryptos
+ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS trades (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    symbol VARCHAR(255) NULL,
+    operation VARCHAR(255) NULL,
+    quantity DECIMAL(10,4) NOT NULL,
+    price_usd DECIMAL(10,4) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

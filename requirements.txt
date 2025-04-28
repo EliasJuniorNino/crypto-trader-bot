@@ -4,6 +4,7 @@ joblib
 scikit-learn
 python-dotenv
 keras
+python-binance
 
 # TensorFlow com CUDA para Windows
 tensorflow[and-cuda] ; sys_platform == "win32"

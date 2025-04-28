@@ -8,6 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import logging
 
+# 2025,2,4,72,45,2664.92,2838
+
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -33,32 +35,25 @@ def load_data(file_path):
 def train_model(df, coin):
     """Treina um modelo de Random Forest e salva o arquivo."""
     try:
-        # Separa features (X) e target (y)
         X = df.copy()
         y = df[[f"{coin}_max_value", f"{coin}_min_value"]].shift(-1)
 
-        # Remove a última linha (NaN devido ao shift)
         X = X.iloc[:-1]
         y = y.iloc[:-1]
 
-        # Divide os dados em treino e teste
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Cria o pipeline de pré-processamento e modelo
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
             ('model', RandomForestRegressor(n_estimators=500, max_depth=50, random_state=42, n_jobs=-1))
         ])
 
-        # Treina o modelo
         pipeline.fit(X_train, y_train)
 
-        # Avalia o modelo
         y_pred = pipeline.predict(X_test)
         mse = mean_squared_error(y_test, y_pred)
         logging.info(f"Modelo treinado para {coin} com MSE: {mse:.4f}")
 
-        # Salva o modelo
         os.makedirs("models", exist_ok=True)
         model_path = f"models/model_{coin}.pkl"
         joblib.dump(pipeline, model_path)
@@ -67,14 +62,41 @@ def train_model(df, coin):
     except Exception as e:
         logging.error(f"Erro ao treinar o modelo para {coin}: {e}")
 
+def predict_last_row(df, coin):
+    """Prevê os valores max e min para a última linha do dataset."""
+    try:
+        model_path = f"models/model_{coin}.pkl"
+        if not os.path.exists(model_path):
+            logging.warning(f"Modelo não encontrado para {coin}.")
+            return
+
+        model = joblib.load(model_path)
+
+        last_row = df.iloc[[-1]]  # DataFrame com a última linha
+        prediction = model.predict(last_row)
+
+        return {
+            "coin": coin,
+            "predicted_max": round(prediction[0][0], 50),
+            "predicted_min": round(prediction[0][1], 50)
+        }
+
+    except Exception as e:
+        logging.error(f"Erro ao prever a última linha para {coin}: {e}")
+
 def main():
-    """Função principal para carregar dados e treinar modelos."""
-    file_path = "data/dataset.csv"  # Nome do arquivo do dataset
+    file_path = "data/dataset.csv"
     df, coin_names = load_data(file_path)
 
+    predictMap = {}
     if df is not None and coin_names:
         for coin in coin_names:
+            pass
             train_model(df.copy(), coin)
+    
+        for coin in coin_names:
+            predictMap[coin] = predict_last_row(df.copy(), coin)
+    print(predictMap)
 
 if __name__ == "__main__":
     main()
