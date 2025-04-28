@@ -49,7 +49,7 @@ To run the bot locally:
 3. Start the containers with Docker Compose:
 
    ```bash
-   docker-compose up
+   docker-compose up --build
    ```
 
 ## 📄 License
