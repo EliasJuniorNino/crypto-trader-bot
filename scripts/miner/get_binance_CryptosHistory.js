@@ -9,13 +9,15 @@ dotenv.config();
 const logStream = fs.createWriteStream('out.log', { flags: 'a' });
 
 function logError(message, error = {}) {
-  const errorMessage = `[${new Date().toISOString()}] ${message}: ${error.stack || error.message || error}`;
+  const currentTimeStr = moment(new Date().toISOString()).format("YYYY-MM-DD HH:mm:ss");
+  const errorMessage = `[${currentTimeStr}] ${message}: ${error.stack || error.message || error}`;
   console.error(errorMessage);
   logStream.write(errorMessage + '\n');
 }
 
 function logInfo(message) {
-  const infoMessage = `[${new Date().toISOString()}] ${message}`;
+  const currentTimeStr = moment(new Date().toISOString()).format("YYYY-MM-DD HH:mm:ss");
+  const infoMessage = `[${currentTimeStr}] ${message}`;
   console.log(infoMessage);
   logStream.write(infoMessage + '\n');
 }
@@ -52,10 +54,10 @@ async function disableCrypto(connection, symbol) {
   }
 }
 
-// Buscar símbolos das criptomoedas
-async function fetchCryptos(connection) {
+async function disableNotCollectableCryptos(connection) {
+  const cryptosToDisable = []
   try {
-    const [rows] = await connection.execute(`
+    const [cryptos] = await connection.execute(`
       SELECT c.id, c.symbol, e.id AS exchange_id
       FROM cryptos c
       JOIN exchanges_cryptos ec ON c.id = ec.crypto_id
@@ -63,7 +65,56 @@ async function fetchCryptos(connection) {
       WHERE LOWER(e.name) LIKE '%binance%'
       AND c.is_enabled = 1;
     `);
-    return rows;
+
+    const BINANCE_API_URL = 'https://api.binance.com/api/v3/klines';
+    for (let i = 0; i < cryptos.length; i++) {
+      const symbol = cryptos[i].symbol
+      const symbolParam = `${symbol}USDT`
+      const limit = 1
+      const params = {
+        symbol: symbolParam,
+        interval: '1m',
+        limit,
+        startTime: moment().startOf('day').subtract(1, 'days').valueOf(),
+        endTime: moment().startOf('day').valueOf()
+      };
+      const response = await axios.get(BINANCE_API_URL, { params });
+      if (!response.data?.length) {
+        cryptosToDisable.push(symbol)
+      }
+    }
+
+  } finally { }
+
+  logInfo(`Cryptos do disable: ${JSON.stringify(cryptosToDisable)}`);
+  try {
+    if (cryptosToDisable.length) {
+      const placeholders = cryptosToDisable.map(() => '?').join(', ');
+      await connection.execute(`
+        UPDATE cryptos
+        SET is_enabled = 0
+        WHERE symbol IN (${placeholders})
+      `, cryptosToDisable);
+    }
+  } catch (error) {
+    logError(`Falha ao desativar cryptos`, error);
+  }
+}
+
+// Buscar símbolos das criptomoedas
+async function fetchCryptos(connection) {
+  logInfo(`Searching for cryptos to collect...`);
+
+  try {
+    const [cryptos] = await connection.execute(`
+      SELECT c.id, c.symbol, e.id AS exchange_id
+      FROM cryptos c
+      JOIN exchanges_cryptos ec ON c.id = ec.crypto_id
+      JOIN exchanges e ON ec.exchange_id = e.id
+      WHERE LOWER(e.name) LIKE '%binance%'
+      AND c.is_enabled = 1;
+    `);
+    return cryptos;
   } catch (error) {
     logError('Falha ao buscar criptomoedas da Binance', error);
     return [];
@@ -77,9 +128,9 @@ async function fetchCryptoHistory(connection, symbol, START_TIME, END_TIME) {
   try {
     let pricesHistory = []
     let endDate = END_TIME.clone()
-    while(endDate.isAfter(START_TIME)) {
+    let startDate = endDate.clone().subtract(6, 'hours')
+    while (startDate.isSameOrAfter(START_TIME)) {
       try {
-        let startDate = endDate.clone().subtract(6, 'hours')
         const limit = 10000
         const params = {
           symbol: symbolParam,
@@ -90,10 +141,6 @@ async function fetchCryptoHistory(connection, symbol, START_TIME, END_TIME) {
         };
         const response = await axios.get(BINANCE_API_URL, { params });
 
-        startTimeStr = startDate.format('YYYY-MM-DD')
-        endTimeStr = endDate.format('YYYY-MM-DD')
-        logInfo(`Collected: ${startTimeStr} > ${endTimeStr} | ${response.data?.length} of ${symbol}.`);
-
         pricesHistory = [
           ...pricesHistory,
           ...response.data.map(entry => ({
@@ -102,8 +149,14 @@ async function fetchCryptoHistory(connection, symbol, START_TIME, END_TIME) {
             TakerBuyVolume: entry[9], TakerBuyBaseAssetVolume: entry[10]
           }))
         ]
-      } finally { }
-      endDate.subtract(6, 'hours')
+      } catch {
+        startTimeStr = startDate.format('YYYY-MM-DD HH:mm')
+        endTimeStr = endDate.format('YYYY-MM-DD HH:mm')
+        logError(`Falha ao colletar ${symbol} no intervalo ${startTimeStr} -> ${endTimeStr}`)
+      } finally {
+        startDate.subtract(6, 'hours')
+        endDate.subtract(6, 'hours')
+      }
     }
     return pricesHistory;
   } catch (error) {
@@ -160,28 +213,74 @@ async function insertPriceHistory(connection, priceHistory, crypto) {
   }
 }
 
+function calcularTempoRestante(percentual, tempoGastoSegundos) {
+  // Converte percentual para decimal
+  const porcentagem = parseFloat(percentual) / 100;
+
+  if (porcentagem <= 0 || porcentagem >= 1) {
+    return "...";
+  }
+
+  // Calcula tempo total estimado
+  const tempoTotalEstimado = tempoGastoSegundos / porcentagem;
+
+  // Calcula o tempo restante
+  const tempoRestanteSegundos = tempoTotalEstimado - tempoGastoSegundos;
+
+  // Converte tempo restante de segundos para "HH:MM:SS"
+  const horas = Math.floor(tempoRestanteSegundos / 3600);
+  const minutos = Math.floor((tempoRestanteSegundos % 3600) / 60);
+  const segundos = Math.floor(tempoRestanteSegundos % 60);
+
+  const pad = (n) => n.toString().padStart(2, '0');
+  return `${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
+}
+
+
 // Executar fluxo principal
 (async () => {
   try {
     const connection = await connectDb();
     if (!connection) return;
 
+    //await disableNotCollectableCryptos();
     const cryptos = await fetchCryptos(connection);
-    const daysOffset = 0; // ex: batchSize offset
-    const batchSize = 90; // Dias de dados buscados
 
-    for (let i = 0; i < batchSize; i++) {
-      const END_TIME = moment().utc().startOf('day').subtract(daysOffset, 'days');
-      const START_TIME = END_TIME.clone().subtract(batchSize, 'days');
+    const daysOffset = 6;
+    const daysBatchSize = 7;
 
-      startTimeStr = START_TIME.format('YYYY-MM-DD')
-      endTimeStr = END_TIME.format('YYYY-MM-DD')
+    const scriptStartedTime = moment()
+    for (let dayIndex = 0; dayIndex < daysBatchSize; dayIndex++) {
+      const END_TIME = moment().utc().startOf('day').subtract((daysOffset + dayIndex), 'days');
+      const START_TIME = END_TIME.clone().subtract(1, 'days');
+
+      startTimeStr = START_TIME.format('YYYY-MM-DD HH:mm');
+      endTimeStr = END_TIME.format('YYYY-MM-DD HH:mm');
 
       logInfo(`Interval: ${startTimeStr} > ${endTimeStr} | ${cryptos.length} Cryptos.`);
 
-      for (const crypto of cryptos) {
+      const cryptosCount = cryptos.length;
+      for (let cryptoIndex = 0; cryptoIndex < cryptosCount; cryptoIndex++) {
+        const crypto = cryptos[cryptoIndex];
         const history = await fetchCryptoHistory(connection, crypto.symbol, START_TIME, END_TIME);
-        logInfo(`${startTimeStr} > ${endTimeStr} | ${Number(history?.length)} history for ${crypto.symbol}.`);
+        const historiesCount = Number(history?.length);
+
+        const totalSteps = daysBatchSize * cryptosCount;
+        const currentStep = (dayIndex * cryptosCount) + cryptoIndex; // +1 para começar em 1
+        const percent = (currentStep / totalSteps) * 100;
+        const percentStr = `${percent.toFixed(2)}%`;
+
+        const now = moment();
+        const elapsedSeconds = now.diff(scriptStartedTime, 'seconds');
+        const elapsedDuration = moment.duration(elapsedSeconds, 'seconds');
+        const elapsedHours = String(elapsedDuration.hours()).padStart(2, '0');
+        const elapsedMinutes = String(elapsedDuration.minutes()).padStart(2, '0');
+        const elapsedSecounds = String(elapsedDuration.seconds()).padStart(2, '0');
+        const elapsedTime = `${elapsedHours}:${elapsedMinutes}:${elapsedSecounds}`;
+
+        const remainingTime = calcularTempoRestante(percent, elapsedSeconds)
+
+        logInfo(`${percentStr} ${elapsedTime} predict ${remainingTime} | ${startTimeStr} > ${endTimeStr} | ${crypto.symbol}\t | ${historiesCount} histories.`);
         await insertPriceHistory(connection, history, crypto);
       }
     }
