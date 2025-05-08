@@ -9,14 +9,14 @@ dotenv.config();
 const logStream = fs.createWriteStream('out.log', { flags: 'a' });
 
 function logError(message, error = {}) {
-  const currentTimeStr = moment(new Date().toISOString()).format("YYYY-MM-DD HH:mm:ss");
+  const currentTimeStr = moment().format("YYYY-MM-DD HH:mm:ss");
   const errorMessage = `[${currentTimeStr}] ${message}: ${error.stack || error.message || error}`;
   console.error(errorMessage);
   logStream.write(errorMessage + '\n');
 }
 
 function logInfo(message) {
-  const currentTimeStr = moment(new Date().toISOString()).format("YYYY-MM-DD HH:mm:ss");
+  const currentTimeStr = moment().format("YYYY-MM-DD HH:mm:ss");
   const infoMessage = `[${currentTimeStr}] ${message}`;
   console.log(infoMessage);
   logStream.write(infoMessage + '\n');
@@ -246,11 +246,11 @@ function calcularTempoRestante(percentual, tempoGastoSegundos) {
     //await disableNotCollectableCryptos();
     const cryptos = await fetchCryptos(connection);
 
-    const daysOffset = 6;
-    const daysBatchSize = 7;
+    const daysOffset = 30 * 1;
+    const daysBatchSize = 30;
 
     const scriptStartedTime = moment()
-    for (let dayIndex = 0; dayIndex < daysBatchSize; dayIndex++) {
+    for (let dayIndex = 0; dayIndex < (daysBatchSize + 1); dayIndex++) {
       const END_TIME = moment().utc().startOf('day').subtract((daysOffset + dayIndex), 'days');
       const START_TIME = END_TIME.clone().subtract(1, 'days');
 
@@ -265,7 +265,7 @@ function calcularTempoRestante(percentual, tempoGastoSegundos) {
         const history = await fetchCryptoHistory(connection, crypto.symbol, START_TIME, END_TIME);
         const historiesCount = Number(history?.length);
 
-        const totalSteps = daysBatchSize * cryptosCount;
+        const totalSteps = (daysBatchSize + 1) * cryptosCount;
         const currentStep = (dayIndex * cryptosCount) + cryptoIndex; // +1 para começar em 1
         const percent = (currentStep / totalSteps) * 100;
         const percentStr = `${percent.toFixed(2)}%`;

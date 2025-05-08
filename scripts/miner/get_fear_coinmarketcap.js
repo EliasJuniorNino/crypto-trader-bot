@@ -29,7 +29,7 @@ function convertToMySQLDatetime(epochTimestamp) {
 }
 
 // Função para obter dados da API
-async function fetchData(limit = 50, start = null) {
+async function fetchData(limit, start = null) {
   try {
     const params = { limit };
     if (start) params.start = start;
@@ -95,7 +95,7 @@ async function insertData(connection, data) {
 (async () => {
   const dbConn = await connectDB();
   if (dbConn) {
-    const data = await fetchData(100);
+    const data = await fetchData(30);
     if (data) {
       await insertData(dbConn, data);
     }
