@@ -12,9 +12,9 @@ if initial_df.empty:
 
 # Preprocessing (limpeza e preparação)
 initial_df.dropna(axis=1, inplace=True)
-initial_df = initial_df.loc[:, ~(initial_df == 0).any()]
+initial_df = initial_df.loc[:, ~((initial_df == 0) | (initial_df.isna())).any()]
 initial_df.drop_duplicates(inplace=True)
-initial_df.to_csv("data/dataset_clean.csv")
+initial_df.to_csv("data/dataset_clean.csv", index=False)
 
 # Seleção de features e targets
 df_full = pd.read_csv("data/dataset_clean.csv")
