@@ -246,8 +246,8 @@ function calcularTempoRestante(percentual, tempoGastoSegundos) {
     //await disableNotCollectableCryptos();
     const cryptos = await fetchCryptos(connection);
     const cryptosCount = cryptos.length;
-    const startDayInterval = moment('2024-12-01', 'YYYY-MM-DD').utc().startOf('day');
-    const endDayInterval = moment('2025-01-01', 'YYYY-MM-DD').utc().startOf('day');
+    const startDayInterval = moment('2024-12-07', 'YYYY-MM-DD').utc().startOf('day');
+    const endDayInterval = moment('2025-12-07', 'YYYY-MM-DD').utc().startOf('day');
 
     logInfo(`From ${startDayInterval.format('YYYY-MM-DD')} to ${endDayInterval.format('YYYY-MM-DD')} | ${cryptos.length} Cryptos.`);
     
