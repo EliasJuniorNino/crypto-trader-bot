@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 load_dotenv()
 
 # Caminho para o banco SQLite - altere para o seu caminho
-SQLITE_DB_PATH = "database.db"
+SQLITE_DB_PATH = "database/database.db"
 
 # Arquivo para armazenar o progresso
 PROGRESS_FILE = "data/progress.json"
