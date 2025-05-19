@@ -1,31 +1,36 @@
-# Etapa base com suporte a Node.js e Python + TensorFlow
-FROM python:3.9-slim
+FROM nvidia/cuda:12.9.0-cudnn-devel-ubuntu24.04
 
-# Instala Node.js LTS (18.x) + dependências do sistema
+WORKDIR /workspaces
+
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y \
-    curl \
-    gnupg \
-    build-essential \
-    python3-dev \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean
+  python3 \
+  python3-pip \
+  python3-venv \
+  curl \
+  git \
+  build-essential \
+  openssh-client \
+  sudo \
+  wget \
+  vim \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# Cria diretório da aplicação
-WORKDIR /app
+# Copiar requirements.txt para dentro do container
+COPY requirements.txt .
 
-# Copia arquivos do projeto
-COPY . /app
+# criar diretorio venv
+RUN python3 -m venv /venv
 
-# Instala dependências Python
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Ativar o venv
+RUN . /venv/bin/activate
 
-# Instala dependências Node.js
-RUN npm install
+# Instalar pacotes do requirements.txt
+RUN /venv/bin/python3 -m pip install --upgrade pip
+RUN /venv/bin/python3 -m pip install -r requirements.txt
 
-# Expõe a porta do Jupyter caso queira usá-lo futuramente
-EXPOSE 8888
+WORKDIR /workspaces/CryptoTrader
 
-# Comando padrão (pode ser sobrescrito no docker-compose)
-CMD ["node", "trader.js"]
+CMD ["bash"]

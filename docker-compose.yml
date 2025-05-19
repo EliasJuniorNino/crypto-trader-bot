@@ -1,31 +1,22 @@
 version: "3.8"
 
 services:
-  mySQL:
-    image: mysql:latest
-    container_name: mySQL
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: database
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./data/mysql_data:/var/lib/mysql
-      - ./data/etc/mysql/my.conf:/etc/mysql/my.conf
-
-  miner:
-    image: python:3.11-slim
-    container_name: miner_bot
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: crypto_trader_app
+    container_name: crypto_trader_app
     volumes:
       - .:/workspaces/CryptoTrader
+
+  binance_miner:
+    image: crypto_trader_app
+    container_name: binance_miner_bot
     working_dir: /workspaces/CryptoTrader
+    volumes:
+      - .:/workspaces/CryptoTrader
+    depends_on:
+      - app
     command: >
-      bash -c "
-        python -m venv venv &&
-        . venv/bin/activate &&
-        pip install --upgrade pip &&
-        pip install -r requirements.txt &&
-        python scripts/download_binance_crypto_data.py
-      "
+      bash -c "/venv/bin/python3 scripts/download_binance_crypto_data.py"

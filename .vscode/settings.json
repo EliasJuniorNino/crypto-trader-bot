@@ -1,6 +1,6 @@
 {
     "editor.formatOnSave": true,
-    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "python.defaultInterpreterPath": "venv/bin/python",
     "[javascript]": {
         "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
     }
