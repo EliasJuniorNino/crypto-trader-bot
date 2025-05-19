@@ -14,3 +14,18 @@ services:
     volumes:
       - ./data/mysql_data:/var/lib/mysql
       - ./data/etc/mysql/my.conf:/etc/mysql/my.conf
+
+  miner:
+    image: python:3.11-slim
+    container_name: miner_bot
+    volumes:
+      - .:/workspaces/CryptoTrader
+    working_dir: /workspaces/CryptoTrader
+    command: >
+      bash -c "
+        python -m venv venv &&
+        . venv/bin/activate &&
+        pip install --upgrade pip &&
+        pip install -r requirements.txt &&
+        python scripts/download_binance_crypto_data.py
+      "

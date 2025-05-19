@@ -54,53 +54,6 @@ async function disableCrypto(connection, symbol) {
   }
 }
 
-async function disableNotCollectableCryptos(connection) {
-  const cryptosToDisable = []
-  try {
-    const [cryptos] = await connection.execute(`
-      SELECT c.id, c.symbol, e.id AS exchange_id
-      FROM cryptos c
-      JOIN exchanges_cryptos ec ON c.id = ec.crypto_id
-      JOIN exchanges e ON ec.exchange_id = e.id
-      WHERE LOWER(e.name) LIKE '%binance%'
-      AND c.is_enabled = 1;
-    `);
-
-    const BINANCE_API_URL = 'https://api.binance.com/api/v3/klines';
-    for (let i = 0; i < cryptos.length; i++) {
-      const symbol = cryptos[i].symbol
-      const symbolParam = `${symbol}USDT`
-      const limit = 1
-      const params = {
-        symbol: symbolParam,
-        interval: '1m',
-        limit,
-        startTime: moment().startOf('day').subtract(1, 'days').valueOf(),
-        endTime: moment().startOf('day').valueOf()
-      };
-      const response = await axios.get(BINANCE_API_URL, { params });
-      if (!response.data?.length) {
-        cryptosToDisable.push(symbol)
-      }
-    }
-
-  } finally { }
-
-  logInfo(`Cryptos do disable: ${JSON.stringify(cryptosToDisable)}`);
-  try {
-    if (cryptosToDisable.length) {
-      const placeholders = cryptosToDisable.map(() => '?').join(', ');
-      await connection.execute(`
-        UPDATE cryptos
-        SET is_enabled = 0
-        WHERE symbol IN (${placeholders})
-      `, cryptosToDisable);
-    }
-  } catch (error) {
-    logError(`Falha ao desativar cryptos`, error);
-  }
-}
-
 // Buscar símbolos das criptomoedas
 async function fetchCryptos(connection) {
   logInfo(`Searching for cryptos to collect...`);
@@ -213,29 +166,6 @@ async function insertPriceHistory(connection, priceHistory, crypto) {
   }
 }
 
-function calcularTempoRestante(percentual, tempoGastoSegundos) {
-  // Converte percentual para decimal
-  const porcentagem = parseFloat(percentual) / 100;
-
-  if (porcentagem <= 0 || porcentagem >= 1) {
-    return "...";
-  }
-
-  // Calcula tempo total estimado
-  const tempoTotalEstimado = tempoGastoSegundos / porcentagem;
-
-  // Calcula o tempo restante
-  const tempoRestanteSegundos = tempoTotalEstimado - tempoGastoSegundos;
-
-  // Converte tempo restante de segundos para "HH:MM:SS"
-  const horas = Math.floor(tempoRestanteSegundos / 3600);
-  const minutos = Math.floor((tempoRestanteSegundos % 3600) / 60);
-  const segundos = Math.floor(tempoRestanteSegundos % 60);
-
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
-}
-
 // Executar fluxo principal
 (async () => {
   try {
@@ -245,8 +175,8 @@ function calcularTempoRestante(percentual, tempoGastoSegundos) {
     //await disableNotCollectableCryptos();
     const cryptos = await fetchCryptos(connection);
     const cryptosCount = cryptos.length;
-    const startDayInterval = moment('2024-12-07', 'YYYY-MM-DD').utc().startOf('day');
-    const endDayInterval = moment('2025-12-07', 'YYYY-MM-DD').utc().startOf('day');
+    const startDayInterval = moment().utc().startOf('day');
+    const endDayInterval = moment().utc().endOf('day');
 
     logInfo(`From ${startDayInterval.format('YYYY-MM-DD')} to ${endDayInterval.format('YYYY-MM-DD')} | ${cryptos.length} Cryptos.`);
     
@@ -272,7 +202,7 @@ function calcularTempoRestante(percentual, tempoGastoSegundos) {
         }
       }
       finally {
-        currentDay = currentDay.subtract(1, 'days')
+        currentDay = currentDay.subtract(1, 'day')
       }
     }
 

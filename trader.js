@@ -2,19 +2,22 @@ const { exec } = require('child_process');
 const { assert } = require('console');
 
 async function generatePredict() {
-    await new Promise((resolve, reject) => {
-        exec('node scripts/miner/get_fear_alternative.me.js', (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Erro ao executar o script: ${error.message}`);
-            }
-            if (stderr) {
-              console.error(`stderr: ${stderr}`);
-            }
-            console.log(`stdout: ${stdout}`);
-            resolve()
-          });
-    })
-    await new Promise((resolve, reject) => {
+    try {
+      await new Promise((resolve, reject) => {
+          exec('node scripts/miner/get_fear_alternative.me.js', (error, stdout, stderr) => {
+              if (error) {
+                console.error(`Erro ao executar o script: ${error.message}`);
+              }
+              if (stderr) {
+                console.error(`stderr: ${stderr}`);
+              }
+              console.log(`stdout: ${stdout}`);
+              resolve()
+            });
+      })
+    } finally { }
+    try {
+      await new Promise((resolve, reject) => {
         exec('node scripts/miner/get_fear_coinmarketcap.js', (error, stdout, stderr) => {
           if (error) {
             console.error(`Erro ao executar o script: ${error.message}`);
@@ -25,9 +28,11 @@ async function generatePredict() {
           console.log(`stdout: ${stdout}`);
           resolve()
           });
-    })
-    await new Promise((resolve, reject) => {
-        exec('node scripts/miner/get_binance_CurrentDayCryptosHistory.js', (error, stdout, stderr) => {
+      })
+    } finally { }
+    try {
+      await new Promise((resolve, reject) => {
+        exec('node scripts/miner/get_binance_CurrentLastHistory.js', (error, stdout, stderr) => {
             if (error) {
               console.error(`Erro ao executar o script: ${error.message}`);
             }
@@ -37,38 +42,15 @@ async function generatePredict() {
             console.log(`stdout: ${stdout}`);
             resolve()
           });
-    })
-    await new Promise((resolve, reject) => {
-        exec('node scripts/miner/generate_dataset.js', (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Erro ao executar o script: ${error.message}`);
-          }
-          if (stderr) {
-            console.error(`stderr: ${stderr}`);
-          }
-          console.log(`stdout: ${stdout}`);
-          resolve()
-          });
-    })
-    await new Promise((resolve, reject) => {
-        exec('python scripts/trader_strategies/predict_rf.py', (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Erro ao executar o script: ${error.message}`);
-          }
-          if (stderr) {
-            console.error(`stderr: ${stderr}`);
-          }
-          console.log(`stdout: ${stdout}`);
-          resolve()
-          });
-    })
+      })
+    } finally { }
 }
 
 async function main() {
   while(true) {
     try {
       await generatePredict()
-      await new Promise((resolve, _) => setTimeout(resolve, 60*60*24))
+      await new Promise((resolve, _) => setTimeout(resolve, 60*60))
     } catch (e) {
       console.error(e)
     }

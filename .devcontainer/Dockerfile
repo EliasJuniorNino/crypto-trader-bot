@@ -1,45 +1,56 @@
-# Use a base image with CUDA support
-FROM nvidia/cuda:11.6.2-devel-ubuntu20.04
+FROM nvidia/cuda:12.9.0-cudnn-devel-ubuntu24.04
 
-# Set the working directory
-WORKDIR /workspace
+# Set working directory
+WORKDIR /workspaces
 
-# Install dependencies
+# Avoid prompts during package installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Update and install required packages
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    g++ \
-    git \
-    curl \
-    vim \
     python3 \
     python3-pip \
-    mysql-client \
-    libmysqlclient-dev \
+    python3-venv \
+    curl \
+    git \
+    build-essential \
+    openssh-client \
+    sudo \
+    wget \
+    vim \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean
 
-RUN apt-get install libboost-all-dev -y
-RUN apt-get install libmysqlcppconn-dev -y
-RUN apt-get install python3.10-venv -y
+# Create a Python virtual environment
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install CUDA development tools
-RUN apt-get update && apt-get install -y \
-    cuda-toolkit-11-6 \
-    && apt-get clean
+# Upgrade pip inside the virtual environment
+RUN pip install --upgrade pip
 
-# Install any Python dependencies (optional, if using Python for data processing)
-RUN pip3 install --no-cache-dir numpy pandas
+# Adiciona o usuário vscode (esperado pelo Dev Containers)
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
 
-# Copy your project files into the container
-COPY . /workspace
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# Set the environment variables for CUDA
-ENV PATH=/usr/local/cuda-11.6/bin${PATH:+:${PATH}}
-ENV LD_LIBRARY_PATH=/usr/local/cuda-11.6/lib64/stubs:${LD_LIBRARY_PATH}
-ENV CUDA_HOME=/usr/local/cuda-11.6
+# Set PATH so that the virtualenv is accessible to the non-root user
+RUN echo "PATH=$VIRTUAL_ENV/bin:$PATH" >> /home/$USERNAME/.bashrc
 
-# Expose ports if needed for communication with other services
-EXPOSE 8080
+# Verify installations
+RUN echo "Python version:" && python --version \
+    && echo "Node.js version:" && node --version \
+    && echo "npm version:" && npm --version \
+    && echo "CUDA version:" && nvcc --version
 
-# Default command to keep the container running
-CMD ["sleep", "infinity"]
+USER $USERNAME
