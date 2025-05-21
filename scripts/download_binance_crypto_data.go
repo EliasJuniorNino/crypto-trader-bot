@@ -323,7 +323,7 @@ func extractZip(zipPath, destDir string) error {
 	return nil
 }
 
-func download_bynance_crypto_data() {
+func DownloadBinanceCryptoData() {
 	// Configurar logging
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 	log.SetPrefix("INFO: ")

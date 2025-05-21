@@ -76,9 +76,16 @@ func MigrateFearIndex() {
 	var fearIndices []FearIndex
 	for rows.Next() {
 		var fi FearIndex
-		err := rows.Scan(&fi.ID, &fi.Source, &fi.Target, &fi.Date, &fi.Value)
+		var dateBytes []byte
+		err := rows.Scan(&fi.ID, &fi.Source, &fi.Target, &dateBytes, &fi.Value)
 		if err != nil {
 			fmt.Printf("Erro ao ler registro do MySQL: %v\n", err)
+			continue
+		}
+		dateStr := string(dateBytes)
+		fi.Date, err = time.Parse("2006-01-02 15:04:05", dateStr)
+		if err != nil {
+			fmt.Printf("Erro ao converter data: %v\n", err)
 			continue
 		}
 		fearIndices = append(fearIndices, fi)

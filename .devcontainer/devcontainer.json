@@ -18,9 +18,7 @@
 		"vscode": {
 			"extensions": [
 				"donjayamanne.python-extension-pack",
-				"mechatroner.rainbow-csv",
 				"formulahendry.code-runner",
-				"alexcvzz.vscode-sqlite",
 				"qwtel.sqlite-viewer",
 				"golang.go"
 			],
