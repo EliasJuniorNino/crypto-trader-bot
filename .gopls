@@ -1,0 +1,17 @@
+{
+    "build": {
+        "directoryFilters": [
+            "-scripts-py",
+            "-scripts-sh",
+            "-data",
+            "-database",
+            "-.devcontainer",
+            "-.vscode",
+            "-.idea",
+            "-.git",
+            "-.github",
+            "-models",
+            "-node_modules"
+        ]
+    }
+}

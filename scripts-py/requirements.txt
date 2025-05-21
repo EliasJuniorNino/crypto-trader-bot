@@ -20,9 +20,9 @@ tensorboard>=2.8.0
 wandb>=0.12.0
 
 # TensorFlow com configurações específicas por plataforma
-tensorflow[and-cuda]>=2.8.0 ; sys_platform == "win32"
-tensorflow[and-cuda]>=2.8.0 ; sys_platform == "linux"
-tensorflow-metal>=0.5.0 ; sys_platform == "darwin"
+tensorflow ; sys_platform == "win32"
+tensorflow[and-cuda] ; sys_platform == "linux"
+tensorflow-metal ; sys_platform == "darwin"
 
 # Dependências de DEV
 jupyterlab

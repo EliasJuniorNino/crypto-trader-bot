@@ -10,13 +10,27 @@ services:
     volumes:
       - .:/workspaces/CryptoTrader
 
-  binance_miner:
-    image: crypto_trader_app
-    container_name: binance_miner_bot
-    working_dir: /workspaces/CryptoTrader
+  # binance_miner:
+  #   image: crypto_trader_app
+  #   container_name: binance_miner_bot
+  #   working_dir: /workspaces/CryptoTrader
+  #   volumes:
+  #     - .:/workspaces/CryptoTrader
+  #   depends_on:
+  #     - app
+  #   command: >
+  #     bash -c "go run scripts/download_binance_crypto_data.go"
+
+  mySQL:
+    image: mysql:latest
+    container_name: mySQL
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: database
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
     volumes:
-      - .:/workspaces/CryptoTrader
-    depends_on:
-      - app
-    command: >
-      bash -c "/venv/bin/python3 scripts/download_binance_crypto_data.py"
+      - ./data/mysql_data:/var/lib/mysql
+      - ./data/etc/mysql/my.conf:/etc/mysql/my.conf

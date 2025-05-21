@@ -20,3 +20,4 @@ venv
 *.h5
 *.keras
 *.pkl
+*.exe
