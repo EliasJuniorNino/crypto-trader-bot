@@ -138,8 +138,6 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
    python generate_models.py
    ```
 
----
-
 ### Go
 
 1. Volte para a raiz do projeto (se ainda estiver em `src/scripts-py`):
@@ -160,8 +158,6 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
    go run .
    ```
 
----
-
 ## 🎁 Suporte a CUDA
 
 Se você possui uma GPU NVIDIA com suporte a CUDA, o DevContainer pode aproveitar o poder da GPU para acelerar o treinamento dos modelos.
@@ -176,9 +172,6 @@ Requisitos:
 docker compose --profile cuda up
 ```
 
----
-
 ## 📄 Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
-

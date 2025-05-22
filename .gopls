@@ -1,8 +1,8 @@
 {
     "build": {
         "directoryFilters": [
-            "-scripts-py",
-            "-scripts-sh",
+            "-src/scripts-py",
+            "-src/scripts-sh",
             "-data",
             "-database",
             "-.devcontainer",
@@ -11,7 +11,8 @@
             "-.git",
             "-.github",
             "-models",
-            "-node_modules"
+            "-node_modules",
+            "-venv"
         ]
     }
 }
