@@ -27,44 +27,60 @@ func GetBinanceCurrentDayCryptos() {
 		log.Printf("Criptomoedas encontradas: %v", cryptos)
 	}
 
-	// Exemplo: Inserir histórico de preços
-	priceHistory := []PriceHistory{
-		{
-			Date:                    time.Now(),
-			Price:                   50000.0,
-			CryptoID:                1,
-			ExchangeID:              1,
-			OpenTime:                time.Now().Unix(),
-			OpenPrice:               49500.0,
-			HighPrice:               50500.0,
-			LowPrice:                49000.0,
-			ClosePrice:              50000.0,
-			Volume:                  123.456,
-			CloseTime:               time.Now().Add(time.Minute * 1).Unix(),
-			BaseAssetVolume:         123.456,
-			NumberOfTrades:          100,
-			TakerBuyVolume:          60.0,
-			TakerBuyBaseAssetVolume: 60.0,
-		},
-		// Adicione mais registros conforme necessário
-	}
+	for _, symbol := range cryptos {
+		// Exemplo: Inserir histórico de preços
+		priceHistory := []PriceHistory{
+			{
+				Date:                    time.Now(),
+				Price:                   50000.0,
+				CryptoID:                1,
+				ExchangeID:              1,
+				OpenTime:                time.Now().Unix(),
+				OpenPrice:               49500.0,
+				HighPrice:               50500.0,
+				LowPrice:                49000.0,
+				ClosePrice:              50000.0,
+				Volume:                  123.456,
+				CloseTime:               time.Now().Add(time.Minute * 1).Unix(),
+				BaseAssetVolume:         123.456,
+				NumberOfTrades:          100,
+				TakerBuyVolume:          60.0,
+				TakerBuyBaseAssetVolume: 60.0,
+			},
+			// Adicione mais registros conforme necessário
+		}
 
-	err = savePriceHistoryToCSV(db, "BTC", priceHistory)
-	if err != nil {
-		log.Printf("Erro ao inserir histórico de preços: %v", err)
-	} else {
-		log.Println("Histórico de preços inserido com sucesso.")
+		err = savePriceHistoryToCSV(db, symbol, priceHistory)
+		if err != nil {
+			log.Printf("Erro ao inserir histórico de preços: %v", err)
+		} else {
+			log.Printf("%s - inserido com sucesso.", symbol)
+		}
 	}
 }
 
 func savePriceHistoryToCSV(db *sql.DB, symbol string, priceHistory []PriceHistory) error {
-	// Verifica se o diretório existe, se não existir, cria
-	file, err := os.Create("data/last_history/1m/{%s}.csv")
+	dir_path := "data/last_history/1m"
+
+	// Verifica se o diretório existe
+	if _, err := os.Stat(dir_path); os.IsNotExist(err) {
+		log.Printf("Diretorio não existe: %v", err)
+
+		// Cria o diretório
+		err := os.MkdirAll(dir_path, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("erro ao criar diretório: %v", err)
+		}
+	}
+
+	// Cria o arquivo CSV abrindo para escrita
+	file, err := os.Create(fmt.Sprintf("%s/%s.csv", dir_path, symbol))
 	if err != nil {
-		return err
+		return fmt.Errorf("erro ao criar arquivo CSV: %v", err)
 	}
 	defer file.Close()
 
+	// Cria um writer CSV
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 

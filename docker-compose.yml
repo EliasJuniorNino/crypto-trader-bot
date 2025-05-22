@@ -10,17 +10,6 @@ services:
     volumes:
       - .:/workspaces/CryptoTrader
 
-  # binance_miner:
-  #   image: crypto_trader_app
-  #   container_name: binance_miner_bot
-  #   working_dir: /workspaces/CryptoTrader
-  #   volumes:
-  #     - .:/workspaces/CryptoTrader
-  #   depends_on:
-  #     - app
-  #   command: >
-  #     bash -c "go run scripts/download_binance_crypto_data.go"
-
   mySQL:
     image: mysql:latest
     container_name: mySQL
