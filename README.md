@@ -1,3 +1,5 @@
+[🇺🇸 English](README.md) | [🇧🇷 Português](docs/pt-BR/README.md)
+
 # 🚀 Crypto Trader Bot
 
 Scripts required to train the AI model and run the automated cryptocurrency trading bot.
@@ -176,7 +178,7 @@ docker compose --profile cuda up
 
 For detailed usage instructions, available parameters, execution examples, script structure, and more, check out the full project documentation:
 
-👉 **[📖 View Project Documentation](./docs/USAGE.md)**
+👉 **[📖 View Project Documentation](./docs/en/USAGE.md)**
 
 > The `USAGE.md` file contains everything you need to use the bot properly, including how to train the model, configure input parameters, and run the system in different modes.
 

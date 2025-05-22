@@ -176,7 +176,7 @@ docker compose --profile cuda up
 
 Para instruções detalhadas de uso, parâmetros disponíveis, exemplos de execução, estrutura dos scripts e mais, acesse a documentação completa do projeto:
 
-👉 **[📖 Acessar Documentação do Projeto](./docs/USAGE.pt-BR.md)**
+👉 **[📖 Acessar Documentação do Projeto](USAGE.md)**
 
 > O arquivo `USAGE.md` contém tudo o que você precisa para utilizar o bot corretamente, incluindo como treinar o modelo, configurar os parâmetros de entrada e executar o sistema em diferentes modos.
 

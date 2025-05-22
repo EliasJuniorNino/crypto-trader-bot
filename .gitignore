@@ -20,4 +20,25 @@ venv
 *.h5
 *.keras
 *.pkl
+
+# Go build artifacts
 *.exe
+*.test
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories (remove the comment below if you use Go modules)
+vendor/
+
+# IDE/editor files
+*.vscode/
+~*.vscode/launch.json
+~*.vscode/settings.json
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
