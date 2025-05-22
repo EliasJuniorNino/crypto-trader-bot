@@ -98,7 +98,3 @@ Se precisar de ajuda adicional, consulte:
 
 * A documentação técnica no próprio código-fonte
 * Ou abra uma *issue* no [repositório oficial](https://github.com/EliasJuniorNino/crypto-trader-bot)
-
----
-
-Se quiser, posso gerar um arquivo `USAGE.md` já formatado com esse conteúdo. Deseja que eu faça isso agora?
