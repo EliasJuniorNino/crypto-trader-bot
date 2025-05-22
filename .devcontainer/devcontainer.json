@@ -18,9 +18,9 @@
 		"vscode": {
 			"extensions": [
 				"donjayamanne.python-extension-pack",
-				"formulahendry.code-runner",
 				"qwtel.sqlite-viewer",
-				"golang.go"
+				"golang.go",
+				"shivamkumar.go-extras"
 			],
 			"settings": {
 				"editor.formatOnSave": true
