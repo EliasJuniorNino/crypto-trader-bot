@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
   curl \
   git \
   build-essential \
+  gcc-mingw-w64-x86-64 \
   openssh-client \
   sudo \
   wget \
@@ -30,18 +31,18 @@ RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Copiar requirements.txt para dentro do container
-COPY /src/scripts-py/requirements.txt /src/scripts-py/requirements.txt
+COPY /python-project/requirements.txt /python-project/requirements.txt
 
 # criar diretorio venv
-RUN python3 -m venv /src/scripts-py/venv
+RUN python3 -m venv /python-project/venv
 
 # Ativar o venv
-RUN . /src/scripts-py/venv/bin/activate
+RUN . /python-project/venv/bin/activate
 
 # Instalar pacotes do requirements.txt
-RUN /src/scripts-py/venv/bin/python3 -m pip install --upgrade pip
-RUN /src/scripts-py/venv/bin/python3 -m pip install -r requirements.txt
+RUN /python-project/venv/bin/python3 -m pip install --upgrade pip
+RUN /python-project/venv/bin/python3 -m pip install -r requirements.txt
 
-WORKDIR /workspaces/CryptoTrader
+WORKDIR /workspaces/app
 
 CMD ["bash"]

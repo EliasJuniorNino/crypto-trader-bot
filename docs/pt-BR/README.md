@@ -94,7 +94,7 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
    * Execute o script de setup Python:
 
      ```bash
-     cd src/scripts-py
+     cd python-project
      python3 -m venv .venv
      source .venv/bin/activate
      pip install -r requirements.txt
@@ -115,7 +115,7 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
 1. Navegue até a pasta de scripts em Python:
 
    ```bash
-   cd src/scripts-py
+   cd python-project
    ```
 
 2. Crie um ambiente virtual:
@@ -140,10 +140,10 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
 
 ### Go
 
-1. Volte para a raiz do projeto (se ainda estiver em `src/scripts-py`):
+1. Volte para a raiz do projeto (se ainda estiver em `python-project`):
 
    ```bash
-   cd ../../
+   cd ..
    ```
 
 2. Instale as dependências:

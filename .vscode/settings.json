@@ -1,22 +1,4 @@
 {
     "editor.formatOnSave": true,
-    "python.defaultInterpreterPath": "src/scripts-py/venv/bin/python",
-    "gopls": {
-        "build": {
-            "directoryFilters": [
-                "-src/scripts-py",
-                "-src/scripts-sh",
-                "-data",
-                "-database",
-                "-.devcontainer",
-                "-.vscode",
-                "-.idea",
-                "-.git",
-                "-.github",
-                "-models",
-                "-node_modules",
-                "-venv"
-            ]
-        }
-    }
+    "python.defaultInterpreterPath": "python-project/venv/bin/python"
 }

@@ -1,4 +1,4 @@
-package scripts
+package disableCryptos
 
 import (
 	"database/sql"
@@ -13,11 +13,11 @@ import (
 
 // Configurações globais
 const (
-	_SQLiteDBPath = "database/database.db"
+	_sqliteDBPath = "database/database.db"
 )
 
 // Estrutura para criptomoedas habilitadas
-type _Crypto struct {
+type crypto struct {
 	ID         int
 	Symbol     string
 	ExchangeID int
@@ -25,8 +25,8 @@ type _Crypto struct {
 }
 
 // Conectar ao banco de dados SQLite
-func _connectDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", _SQLiteDBPath)
+func connectDB() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", _sqliteDBPath)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao conectar ao banco SQLite: %w", err)
 	}
@@ -34,8 +34,8 @@ func _connectDB() (*sql.DB, error) {
 }
 
 // Obter criptomoedas habilitadas
-func _getEnabledCryptos() ([]_Crypto, error) {
-	db, err := _connectDB()
+func getEnabledCryptos() ([]crypto, error) {
+	db, err := connectDB()
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +54,9 @@ func _getEnabledCryptos() ([]_Crypto, error) {
 	}
 	defer rows.Close()
 
-	var cryptos []_Crypto
+	var cryptos []crypto
 	for rows.Next() {
-		var crypto _Crypto
+		var crypto crypto
 		if err := rows.Scan(&crypto.ID, &crypto.Symbol, &crypto.ExchangeID, &crypto.IsEnabled); err != nil {
 			return nil, fmt.Errorf("erro ao ler linha: %w", err)
 		}
@@ -68,7 +68,7 @@ func _getEnabledCryptos() ([]_Crypto, error) {
 
 // Desativar criptomoeda no banco de dados
 func _disableCrypto(cryptoID int) error {
-	db, err := _connectDB()
+	db, err := connectDB()
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func _disableCrypto(cryptoID int) error {
 }
 
 // Verificar se uma criptomoeda está disponível na Binance em uma data específica
-func _checkCryptoAvailability(symbol, interval, date string) bool {
+func checkCryptoAvailability(symbol, interval, date string) bool {
 	dateTime, err := time.Parse("2006-01-02", date)
 	if err != nil {
 		log.Printf("❌ Formato de data inválido: %v", err)
@@ -127,7 +127,7 @@ func _checkCryptoAvailability(symbol, interval, date string) bool {
 }
 
 // Função principal para desativar criptos indisponíveis
-func DisableCryptos(minDate, maxDate string) {
+func Main(minDate, maxDate string) {
 	// Configurar logging
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 	log.SetPrefix("INFO: ")
@@ -136,7 +136,7 @@ func DisableCryptos(minDate, maxDate string) {
 	log.Printf("📅 Período: %s até %s", minDate, maxDate)
 
 	// Obter criptos habilitadas
-	cryptos, err := _getEnabledCryptos()
+	cryptos, err := getEnabledCryptos()
 	if err != nil {
 		log.Printf("❌ Erro ao obter criptos: %v", err)
 		return
@@ -155,10 +155,10 @@ func DisableCryptos(minDate, maxDate string) {
 		log.Printf("👉 (%d/%d) Verificando %s (ID: %d)", index+1, len(cryptos), symbol, crypto.ID)
 
 		// Verificar disponibilidade na data mínima
-		availableMinDate := _checkCryptoAvailability(symbol, "1m", minDate)
+		availableMinDate := checkCryptoAvailability(symbol, "1m", minDate)
 
 		// Verificar disponibilidade na data máxima
-		availableMaxDate := _checkCryptoAvailability(symbol, "1m", maxDate)
+		availableMaxDate := checkCryptoAvailability(symbol, "1m", maxDate)
 
 		// Se retornou 404 em ambas as datas, desativar a crypto
 		if !availableMinDate || !availableMaxDate {

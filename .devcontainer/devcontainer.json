@@ -1,9 +1,11 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Ubuntu",
+	"name": "devcontainer",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/devcontainers/features/nvidia-cuda:1": {},
@@ -11,7 +13,7 @@
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/devcontainers/features/python:1": {},
 		"ghcr.io/devcontainers/features/go:1": {
-			"version": "1.22"
+			"version": "1.24.3"
 		}
 	},
 	"customizations": {
@@ -20,7 +22,8 @@
 				"donjayamanne.python-extension-pack",
 				"qwtel.sqlite-viewer",
 				"golang.go",
-				"shivamkumar.go-extras"
+				"shivamkumar.go-extras",
+				"ms-vscode.makefile-tools"
 			],
 			"settings": {
 				"editor.formatOnSave": true
@@ -32,7 +35,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "chmod +x src/scripts-sh/setup-git-config.sh && src/scripts-sh/setup-git-config.sh"
+	"postCreateCommand": "chmod +x scripts/setup-git-config.sh && scripts/setup-git-config.sh"
 	// Configure tool-specific properties.
 	// "customizations": {},
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.

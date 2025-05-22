@@ -1,4 +1,4 @@
-package scripts
+package getBinanceData
 
 import (
 	"archive/zip"
@@ -16,20 +16,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Configurações globais
-const (
-	SQLiteDBPath = "database/database.db"
-	ProgressFile = "data/progress.json"
-)
-
 // Estrutura para armazenar progresso
-type Progress struct {
+type progress struct {
 	LastProcessedDate string `json:"last_processed_date,omitempty"`
 	StartedDate       string `json:"started_date,omitempty"`
 }
 
 // Estrutura para criptomoedas habilitadas
-type Crypto struct {
+type enabledCrypto struct {
 	ID         int
 	Symbol     string
 	ExchangeID int
@@ -38,7 +32,7 @@ type Crypto struct {
 
 // Conectar ao banco de dados SQLite
 func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", SQLiteDBPath)
+	db, err := sql.Open("sqlite3", "database/database.db")
 	if err != nil {
 		return nil, fmt.Errorf("erro ao conectar ao banco SQLite: %w", err)
 	}
@@ -47,7 +41,7 @@ func connectDB() (*sql.DB, error) {
 }
 
 // Obter criptomoedas habilitadas
-func getEnabledCryptos() ([]Crypto, error) {
+func getEnabledCryptos() ([]enabledCrypto, error) {
 	db, err := connectDB()
 	if err != nil {
 		return nil, err
@@ -67,9 +61,9 @@ func getEnabledCryptos() ([]Crypto, error) {
 	}
 	defer rows.Close()
 
-	var cryptos []Crypto
+	var cryptos []enabledCrypto
 	for rows.Next() {
-		var crypto Crypto
+		var crypto enabledCrypto
 		if err := rows.Scan(&crypto.ID, &crypto.Symbol, &crypto.ExchangeID, &crypto.IsEnabled); err != nil {
 			return nil, fmt.Errorf("erro ao ler linha: %w", err)
 		}
@@ -81,15 +75,17 @@ func getEnabledCryptos() ([]Crypto, error) {
 
 // Salvar progresso em arquivo JSON
 func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
+	prrogressFile := "data/progress.json"
+
 	// Garantir que o diretório data existe
-	if err := os.MkdirAll(filepath.Dir(ProgressFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(prrogressFile), 0755); err != nil {
 		return fmt.Errorf("erro ao criar diretório para arquivo de progresso: %w", err)
 	}
 
-	var data Progress
+	var data progress
 	// Carregar dados antigos, se existirem
-	if _, err := os.Stat(ProgressFile); err == nil {
-		file, err := os.ReadFile(ProgressFile)
+	if _, err := os.Stat(prrogressFile); err == nil {
+		file, err := os.ReadFile(prrogressFile)
 		if err == nil {
 			json.Unmarshal(file, &data)
 		}
@@ -109,7 +105,7 @@ func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
 		return fmt.Errorf("erro ao serializar dados de progresso: %w", err)
 	}
 
-	if err := os.WriteFile(ProgressFile, jsonData, 0644); err != nil {
+	if err := os.WriteFile(prrogressFile, jsonData, 0644); err != nil {
 		return fmt.Errorf("erro ao salvar arquivo de progresso: %w", err)
 	}
 
@@ -119,10 +115,12 @@ func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
 
 // Carregar a última data processada
 func loadLastProcessedDate() time.Time {
-	if _, err := os.Stat(ProgressFile); err == nil {
-		file, err := os.ReadFile(ProgressFile)
+	prrogressFile := "data/progress.json"
+
+	if _, err := os.Stat(prrogressFile); err == nil {
+		file, err := os.ReadFile(prrogressFile)
 		if err == nil {
-			var data Progress
+			var data progress
 			if err := json.Unmarshal(file, &data); err == nil && data.LastProcessedDate != "" {
 				if date, err := time.Parse("2006-01-02", data.LastProcessedDate); err == nil {
 					return date
@@ -137,10 +135,12 @@ func loadLastProcessedDate() time.Time {
 
 // Carregar a data de início do download
 func loadStartedDate() time.Time {
-	if _, err := os.Stat(ProgressFile); err == nil {
-		file, err := os.ReadFile(ProgressFile)
+	prrogressFile := "data/progress.json"
+
+	if _, err := os.Stat(prrogressFile); err == nil {
+		file, err := os.ReadFile(prrogressFile)
 		if err == nil {
-			var data Progress
+			var data progress
 			if err := json.Unmarshal(file, &data); err == nil && data.StartedDate != "" {
 				if date, err := time.Parse("2006-01-02", data.StartedDate); err == nil {
 					return date
@@ -323,7 +323,7 @@ func extractZip(zipPath, destDir string) error {
 	return nil
 }
 
-func DownloadBinanceCryptoData() {
+func Main() {
 	// Configurar logging
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 	log.SetPrefix("INFO: ")

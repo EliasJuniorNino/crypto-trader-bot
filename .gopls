@@ -1,18 +1,16 @@
 {
     "build": {
         "directoryFilters": [
-            "-src/scripts-py",
-            "-src/scripts-sh",
+            "-build",
+            "-scripts",
+            "-python-project",
             "-data",
             "-database",
             "-.devcontainer",
             "-.vscode",
-            "-.idea",
             "-.git",
             "-.github",
-            "-models",
-            "-node_modules",
-            "-venv"
+            "-models"
         ]
     }
 }

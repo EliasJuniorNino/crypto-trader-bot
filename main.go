@@ -1,8 +1,12 @@
 package main
 
 import (
-	"CryptoTrader/scripts"
-	"bufio"
+	"app/src/scripts/disableCryptos"
+	"app/src/scripts/getBinanceData"
+	"app/src/scripts/getDailyPrices"
+	"app/src/scripts/getFearIndex"
+	"app/src/ui"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -10,98 +14,94 @@ import (
 )
 
 func main() {
-	for {
-		showMenu()
-		choice := getUserChoice()
+	// Definição das flags
+	showHelp := flag.Bool("h", false, "Exibe o menu de ajuda")
+	fearCMC := flag.Bool("GetFearCoinmarketcap", false, "Executa GetFearCoinmarketcap")
+	fearAltMe := flag.Bool("GetFearAlternativeMe", false, "Executa GetFearAlternativeMe")
+	getBinance := flag.Bool("GetBinanceCurrentDayCryptos", false, "Executa GetBinanceCurrentDayCryptos")
+	downloadBinance := flag.Bool("DownloadBinanceCryptoData", false, "Executa DownloadBinanceCryptoData")
+	disableCryptosFlag := flag.Bool("DisableCryptos", false, "Executa DisableCryptos")
+	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
+	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
 
-		switch choice {
-		case "0":
-			fmt.Println("\n👋 Saindo do programa...")
-			os.Exit(0)
-		case "1":
-			fmt.Println("\n🔍 Executando GetFearCoinmarketcap...")
-			scripts.GetFearCoinmarketcap()
-		case "2":
-			fmt.Println("\n🔍 Executando GetFearAlternativeMe...")
-			scripts.GetFearAlternativeMe()
-		case "3":
-			fmt.Println("\n🔍 Executando GetBinanceCurrentDayCryptos...")
-			scripts.GetBinanceCurrentDayCryptos()
-		case "4":
-			fmt.Println("\n🔍 Executando DownloadBinanceCryptoData...")
-			scripts.DownloadBinanceCryptoData()
-		case "5":
-			fmt.Println("\n🔍 Executando DisableCryptos...")
-			minDate, maxDate := getDateRange()
-			scripts.DisableCryptos(minDate, maxDate)
-		default:
-			fmt.Println("\n❌ Opção inválida! Por favor, escolha uma opção válida.")
+	flag.Parse()
+
+	// Mostra ajuda se solicitado ou se nenhuma flag principal for passada
+	if len(os.Args) == 1 {
+		ui.MainCMD()
+		return
+	}
+
+	// Controle de execução múltipla:
+	executouAlgum := false
+
+	if *showHelp {
+		showUsage()
+		executouAlgum = true
+	}
+
+	if *fearCMC {
+		fmt.Println("🔍 Executando GetFearCoinmarketcap...")
+		getFearIndex.GetFearCoinmarketcap()
+		executouAlgum = true
+	}
+
+	if *fearAltMe {
+		fmt.Println("🔍 Executando GetFearAlternativeMe...")
+		getFearIndex.GetFearAlternativeMe()
+		executouAlgum = true
+	}
+
+	if *getBinance {
+		fmt.Println("🔍 Executando GetBinanceCurrentDayCryptos...")
+		getDailyPrices.Main()
+		executouAlgum = true
+	}
+
+	if *downloadBinance {
+		fmt.Println("🔍 Executando DownloadBinanceCryptoData...")
+		getBinanceData.Main()
+		executouAlgum = true
+	}
+
+	if *disableCryptosFlag {
+		if *start == "" || *end == "" {
+			fmt.Println("❌ Para usar -DisableCryptos, forneça -start e -end no formato YYYY-MM-DD.")
+			return
 		}
 
-		fmt.Println("\n" + strings.Repeat("-", 50))
+		if !isValidDate(*start) || !isValidDate(*end) || !isDateAfterOrEqual(*end, *start) {
+			fmt.Println("❌ Datas inválidas. Use o formato YYYY-MM-DD e certifique-se de que a data final seja igual ou posterior à inicial.")
+			return
+		}
+
+		fmt.Printf("🔄 Executando DisableCryptos de %s até %s...\n", *start, *end)
+		disableCryptos.Main(*start, *end)
+		executouAlgum = true
+	}
+
+	if !executouAlgum {
+		fmt.Println("❌ Nenhuma opção reconhecida. Use -h para ver os comandos disponíveis.")
 	}
 }
 
-func showMenu() {
-	fmt.Println("\n📊 CRYPTOTRADER - MENU PRINCIPAL")
+func showUsage() {
+	fmt.Println("\n📊 CRYPTOTRADER - CLI (sem interação)")
 	fmt.Println(strings.Repeat("=", 40))
-	fmt.Println("0. 🚪 Sair")
-	fmt.Println("1. 📈 GetFearCoinmarketcap")
-	fmt.Println("2. 📈 GetFearAlternativeMe")
-	fmt.Println("3. 📈 GetBinanceCurrentDayCryptos")
-	fmt.Println("4. 📦 DownloadBinanceCryptoData")
-	fmt.Println("5. 🔄 DisableCryptos")
+	fmt.Println("Uso:")
+	fmt.Println("  main.exe [OPÇÃO] [FLAGS OPCIONAIS]")
+	fmt.Println()
+	fmt.Println("Opções:")
+	fmt.Println("  -h                            → Exibe este menu")
+	fmt.Println("  -GetFearCoinmarketcap        → Executa GetFearCoinmarketcap")
+	fmt.Println("  -GetFearAlternativeMe        → Executa GetFearAlternativeMe")
+	fmt.Println("  -GetBinanceCurrentDayCryptos → Executa GetBinanceCurrentDayCryptos")
+	fmt.Println("  -DownloadBinanceCryptoData   → Executa DownloadBinanceCryptoData")
+	fmt.Println("  -DisableCryptos              → Executa DisableCryptos (necessita -start e -end)")
+	fmt.Println()
+	fmt.Println("Exemplo:")
+	fmt.Println("  main.exe -DisableCryptos -start 2024-01-01 -end 2024-12-31")
 	fmt.Println(strings.Repeat("=", 40))
-	fmt.Print("Escolha uma opção: ")
-}
-
-func getUserChoice() string {
-	var choice string
-	fmt.Scanln(&choice)
-	return choice
-}
-
-func getDateRange() (string, string) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Println("\n📅 CONFIGURAÇÃO DE DATAS")
-	fmt.Println(strings.Repeat("-", 30))
-
-	// Obter data inicial
-	var minDate string
-	for {
-		fmt.Print("📅 Digite a data inicial (YYYY-MM-DD): ")
-		scanner.Scan()
-		minDate = strings.TrimSpace(scanner.Text())
-
-		if isValidDate(minDate) {
-			break
-		}
-		fmt.Println("❌ Data inválida! Use o formato YYYY-MM-DD (ex: 2023-01-01)")
-	}
-
-	// Obter data final
-	var maxDate string
-	for {
-		fmt.Print("📅 Digite a data final (YYYY-MM-DD): ")
-		scanner.Scan()
-		maxDate = strings.TrimSpace(scanner.Text())
-
-		if isValidDate(maxDate) {
-			// Verificar se a data final é posterior à inicial
-			if isDateAfterOrEqual(maxDate, minDate) {
-				break
-			}
-			fmt.Println("❌ A data final deve ser igual ou posterior à data inicial!")
-		} else {
-			fmt.Println("❌ Data inválida! Use o formato YYYY-MM-DD (ex: 2023-12-31)")
-		}
-	}
-
-	fmt.Printf("✅ Período selecionado: %s até %s\n", minDate, maxDate)
-	fmt.Println(strings.Repeat("-", 30))
-
-	return minDate, maxDate
 }
 
 func isValidDate(dateStr string) bool {
@@ -112,10 +112,8 @@ func isValidDate(dateStr string) bool {
 func isDateAfterOrEqual(date1, date2 string) bool {
 	d1, err1 := time.Parse("2006-01-02", date1)
 	d2, err2 := time.Parse("2006-01-02", date2)
-
 	if err1 != nil || err2 != nil {
 		return false
 	}
-
 	return d1.After(d2) || d1.Equal(d2)
 }

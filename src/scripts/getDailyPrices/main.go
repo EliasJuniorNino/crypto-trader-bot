@@ -1,4 +1,4 @@
-package scripts
+package getDailyPrices
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func GetBinanceCurrentDayCryptos() {
+func Main() {
 	// Abrir conexão com o banco de dados SQLite
 	db, err := sql.Open("sqlite3", "database/database.db")
 	if err != nil {
@@ -29,7 +29,7 @@ func GetBinanceCurrentDayCryptos() {
 
 	for _, symbol := range cryptos {
 		// Exemplo: Inserir histórico de preços
-		priceHistory := []PriceHistory{
+		priceHistory := []priceHistory{
 			{
 				Date:                    time.Now(),
 				Price:                   50000.0,
@@ -59,7 +59,7 @@ func GetBinanceCurrentDayCryptos() {
 	}
 }
 
-func savePriceHistoryToCSV(db *sql.DB, symbol string, priceHistory []PriceHistory) error {
+func savePriceHistoryToCSV(db *sql.DB, symbol string, priceHistory []priceHistory) error {
 	dir_path := "data/last_history/1m"
 
 	// Verifica se o diretório existe
@@ -138,7 +138,7 @@ func fetchCryptos(db *sql.DB) ([]string, error) {
 }
 
 // PriceHistory representa um registro de histórico de preços
-type PriceHistory struct {
+type priceHistory struct {
 	Date                    time.Time
 	Price                   float64
 	CryptoID                int

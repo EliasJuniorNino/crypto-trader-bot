@@ -96,7 +96,7 @@ This project is fully prepared for a **Docker + DevContainer** environment, whic
    * Run the Python setup script:
 
      ```bash
-     cd src/scripts-py
+     cd python-project
      python3 -m venv .venv
      source .venv/bin/activate
      pip install -r requirements.txt
@@ -117,7 +117,7 @@ This project is fully prepared for a **Docker + DevContainer** environment, whic
 1. Navigate to the Python scripts folder:
 
    ```bash
-   cd src/scripts-py
+   cd python-project
    ```
 
 2. Create a virtual environment:
@@ -142,10 +142,10 @@ This project is fully prepared for a **Docker + DevContainer** environment, whic
 
 ### Go
 
-1. Return to the project root (if you're still in `src/scripts-py`):
+1. Return to the project root (if you're still in `python-project`):
 
    ```bash
-   cd ../../
+   cd ..
    ```
 
 2. Install Go dependencies:

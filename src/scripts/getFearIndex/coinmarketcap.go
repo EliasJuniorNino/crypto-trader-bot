@@ -1,4 +1,4 @@
-package scripts
+package getFearIndex
 
 import (
 	"database/sql"
@@ -16,11 +16,11 @@ import (
 
 const apiURL = "https://pro-api.coinmarketcap.com/v3/fear-and-greed/historical"
 
-type APIResponse struct {
-	Data []FearData `json:"data"`
+type apiResponse struct {
+	Data []fearData `json:"data"`
 }
 
-type FearData struct {
+type fearData struct {
 	Timestamp string  `json:"timestamp"`
 	Value     float64 `json:"value"`
 }
@@ -90,7 +90,7 @@ func GetFearCoinmarketcap() {
 	fmt.Printf("%d registros inseridos com sucesso!\n", inserted)
 }
 
-func fetchFearData(apiKey string, limit int) ([]FearData, error) {
+func fetchFearData(apiKey string, limit int) ([]fearData, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -114,7 +114,7 @@ func fetchFearData(apiKey string, limit int) ([]FearData, error) {
 		return nil, fmt.Errorf("resposta inválida: %s", string(body))
 	}
 
-	var apiResp APIResponse
+	var apiResp apiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("erro ao decodificar JSON: %v", err)
 	}

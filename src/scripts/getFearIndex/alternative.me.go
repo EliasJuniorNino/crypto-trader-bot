@@ -1,4 +1,4 @@
-package scripts
+package getFearIndex
 
 import (
 	"database/sql"
@@ -15,11 +15,11 @@ import (
 
 const alternativeAPI = "https://api.alternative.me/fng/?limit=9999999999999999999"
 
-type AlternativeAPIResponse struct {
-	Data []AlternativeFearData `json:"data"`
+type alternativeAPIResponse struct {
+	Data []alternativeFearData `json:"data"`
 }
 
-type AlternativeFearData struct {
+type alternativeFearData struct {
 	Timestamp string `json:"timestamp"`
 	Value     string `json:"value"`
 }
@@ -90,7 +90,7 @@ func GetFearAlternativeMe() {
 	fmt.Printf("%d registros inseridos com sucesso!\n", inserted)
 }
 
-func fetchAlternativeFearData() ([]AlternativeFearData, error) {
+func fetchAlternativeFearData() ([]alternativeFearData, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(alternativeAPI)
 	if err != nil {
@@ -103,7 +103,7 @@ func fetchAlternativeFearData() ([]AlternativeFearData, error) {
 		return nil, fmt.Errorf("resposta inválida: %s", string(body))
 	}
 
-	var apiResp AlternativeAPIResponse
+	var apiResp alternativeAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("erro ao decodificar JSON: %v", err)
 	}

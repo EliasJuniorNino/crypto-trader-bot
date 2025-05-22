@@ -8,7 +8,7 @@ services:
     image: crypto_trader_app
     container_name: crypto_trader_app
     volumes:
-      - .:/workspaces/CryptoTrader
+      - .:/workspaces/app
 
   mySQL:
     image: mysql:latest
