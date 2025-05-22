@@ -1,100 +1,98 @@
-# 📖 Guia de Uso – Crypto Trader Bot
+# 📖 Usage Guide – Crypto Trader Bot
 
-Este guia explica como utilizar a aplicação principal do **Crypto Trader Bot**, incluindo a descrição das opções do menu, o que cada script faz e quais parâmetros são esperados (quando necessário).
+This guide explains how to use the main application of **Crypto Trader Bot**, including descriptions of the menu options, what each script does, and which parameters are expected (when necessary).
 
 ---
 
-## 🚀 Executando o Bot
+## 🚀 Running the Bot
 
-Você pode iniciar o bot via terminal executando o comando a partir da raiz do projeto:
+You can start the bot via terminal by running the command from the project root:
 
 ```bash
 go run .
 ```
 
-Será exibido um menu interativo como este:
+An interactive menu like this will be displayed:
 
 ```
-📊 CRYPTOTRADER - MENU PRINCIPAL
+📊 CRYPTOTRADER - MAIN MENU
 ========================================
-0. 🚪 Sair
+0. 🚪 Exit
 1. 📈 GetFearCoinmarketcap
 2. 📈 GetFearAlternativeMe
 3. 📈 GetBinanceCurrentDayCryptos
 4. 📦 DownloadBinanceCryptoData
 5. 🔄 DisableCryptos
 ========================================
-Escolha uma opção:
+Choose an option:
 ```
 
 ---
 
-## 📋 Opções Disponíveis
+## 📋 Available Options
 
 ### 1. 📈 GetFearCoinmarketcap
 
-Executa a coleta do **Fear & Greed Index** via CoinMarketCap. Essa opção é útil para análises de sentimento de mercado com dados fornecidos por esta plataforma.
+Runs the collection of the **Fear & Greed Index** via CoinMarketCap. This option is useful for market sentiment analysis using data provided by this platform.
 
-* **Pré-requisito:** a variável `COINMARKETCAP_API_KEY` deve estar definida no arquivo `.env`.
+* **Prerequisite:** the variable `COINMARKETCAP_API_KEY` must be set in the `.env` file.
 
 ---
 
 ### 2. 📈 GetFearAlternativeMe
 
-Executa a coleta do **Fear & Greed Index** via [Alternative.me](https://alternative.me/crypto/fear-and-greed-index/). É uma fonte alternativa de sentimento de mercado, usada como base para modelos de previsão.
+Runs the collection of the **Fear & Greed Index** via [Alternative.me](https://alternative.me/crypto/fear-and-greed-index/). It is an alternative source of market sentiment, used as a basis for forecasting models.
 
 ---
 
 ### 3. 📈 GetBinanceCurrentDayCryptos
 
-Coleta todos os criptoativos listados na Binance no **dia atual**. Útil para manter a base de dados atualizada com os ativos disponíveis para análise ou operações de trading.
+Collects all crypto assets listed on Binance for the **current day**. Useful to keep the database updated with assets available for analysis or trading operations.
 
 ---
 
 ### 4. 📦 DownloadBinanceCryptoData
 
-Baixa dados históricos de preços (*Klines*) para os criptoativos listados. Esses dados são usados para treinar modelos de IA e realizar análises de mercado.
+Downloads historical price data (*Klines*) for the listed crypto assets. This data is used to train AI models and perform market analysis.
 
 ---
 
 ### 5. 🔄 DisableCryptos
 
-Desativa criptoativos que **não possuem dados suficientes** para o período selecionado. Verifica se cada criptoativo possui dados para pelo menos uma das datas do intervalo. Caso contrário, ele será desativado..
+Disables crypto assets that **do not have sufficient data** for the selected period. It checks if each crypto asset has data for at least one of the dates in the range. Otherwise, it will be disabled.
 
-#### 🗓️ Parâmetros Requeridos
+#### 🗓️ Required Parameters
 
-Você será solicitado a informar:
+You will be asked to provide:
 
-* **Data Inicial** (`YYYY-MM-DD`)
-* **Data Final** (`YYYY-MM-DD`)
+* **Start Date** (`YYYY-MM-DD`)
+* **End Date** (`YYYY-MM-DD`)
 
-
-
-📌 Exemplo de uso interativo:
+📌 Example of interactive use:
 
 ```
-📅 Digite a data inicial (YYYY-MM-DD): 2023-01-01
-📅 Digite a data final (YYYY-MM-DD): 2023-12-31
-✅ Período selecionado: 2023-01-01 até 2023-12-31
+📅 Enter the start date (YYYY-MM-DD): 2023-01-01
+📅 Enter the end date (YYYY-MM-DD): 2023-12-31
+✅ Selected period: 2023-01-01 to 2023-12-31
 ```
 
 ---
 
-## 🗃️ Armazenamento de Dados
+## 🗃️ Data Storage
 
-* Os **dados coletados** são armazenados na pasta `data/`.
-* Os **modelos treinados** são salvos na pasta `models/`.
-* Um **banco de dados SQLite**, localizado na raiz do projeto, armazena informações como:
+* The **collected data** is stored in the `data/` folder.
+* The **trained models** are saved in the `models/` folder.
+* A **SQLite database**, located in the project root, stores information such as:
 
-  * Lista de criptoativos habilitados/desabilitados
-  * Índices de sentimento de mercado (fear index)
-  * Outras configurações e metadados do sistema
+  * List of enabled/disabled crypto assets
+  * Market sentiment indices (fear index)
+  * Other system settings and metadata
 
 ---
 
-## ❓ Suporte
+## ❓ Support
 
-Se precisar de ajuda adicional, consulte:
+If you need additional help, please consult:
 
-* A documentação técnica no próprio código-fonte
-* Ou abra uma *issue* no [repositório oficial](https://github.com/EliasJuniorNino/crypto-trader-bot)
+* The technical documentation in the source code itself
+* Or open an *issue* in the [official repository](https://github.com/EliasJuniorNino/crypto-trader-bot)

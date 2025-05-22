@@ -1,97 +1,97 @@
 # 🚀 Crypto Trader Bot
 
-Scripts necessários para treinar o modelo de IA e executar o bot de trading automatizado em criptomoedas.
+Scripts required to train the AI model and run the automated cryptocurrency trading bot.
 
-## 📌 Visão Geral
+## 📌 Overview
 
-O **Crypto Trader Bot** é uma aplicação que utiliza aprendizado de máquina (machine learning) para prever movimentos do mercado de criptomoedas, com base na análise do **Fear & Greed Index** e em dados históricos de preços.
+**Crypto Trader Bot** is an application that uses machine learning to predict cryptocurrency market movements based on analysis of the **Fear & Greed Index** and historical price data.
 
-Os scripts são projetados para identificar correlações entre o índice de medo e o preço de cada criptoativo. O sistema pode operar de forma autônoma, executando estratégias baseadas em predições de mercado.
+The scripts are designed to identify correlations between the fear index and the price of each crypto asset. The system can operate autonomously, executing strategies based on market predictions.
 
-## 🛠️ Requisitos
+## 🛠️ Requirements
 
-Para usar este projeto, você pode optar por rodá-lo dentro de um **DevContainer (recomendado)** ou configurar manualmente em sua máquina. Abaixo estão os requisitos conforme sua escolha:
+To use this project, you can choose to run it inside a **DevContainer (recommended)** or set it up manually on your local machine. Below are the requirements depending on your choice:
 
-### ✅ Requisitos Gerais
+### ✅ General Requirements
 
 * [Visual Studio Code (VSCode)](https://code.visualstudio.com/)
 * [Docker Desktop](https://www.docker.com/products/docker-desktop)
-* [Extensão DevContainers para VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+* [DevContainers Extension for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-### ⚙️ Requisitos Locais (caso deseje rodar fora do container)
+### ⚙️ Local Setup Requirements (if you prefer not to use containers)
 
-* [Go](https://golang.org/dl/) (versão 1.20 ou superior)
+* [Go](https://golang.org/dl/) (version 1.20 or higher)
 * [Python 3.10+](https://www.python.org/)
 
-### 🚀 Suporte Opcional (CUDA)
+### 🚀 Optional Support (CUDA)
 
 * [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)
-  *Usado para acelerar o treinamento dos modelos via GPU (quando disponível).*
+  *Used to speed up model training via GPU (if available).*
 
-> 💡 A utilização de CUDA é **opcional**, mas recomendada se você deseja acelerar operações intensivas de machine learning usando sua GPU NVIDIA.
+> 💡 CUDA usage is **optional**, but recommended if you want to accelerate heavy machine learning operations using your NVIDIA GPU.
 
-## 🧪 Tecnologias Usadas
+## 🧪 Technologies Used
 
-* **Go** – Para coleta e persistência dos dados.
-* **Python** – Para análise, modelagem e treinamento do modelo de IA.
-* **SQLite** – Banco de dados leve e embutido.
-* **Docker + DevContainers** – Ambiente isolado e reproduzível.
-* **CUDA (Opcional)** – Aceleração com GPU da NVIDIA para treinar modelos mais rápido.
+* **Go** – For data collection and persistence.
+* **Python** – For analysis, modeling, and AI training.
+* **SQLite** – Lightweight embedded database.
+* **Docker + DevContainers** – Isolated and reproducible development environment.
+* **CUDA (Optional)** – NVIDIA GPU acceleration for faster model training.
 
-## 🚀 Como Começar
+## 🚀 Getting Started
 
-### 1. Clone o Repositório
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/EliasJuniorNino/crypto-trader-bot.git
 cd crypto-trader-bot
 ```
 
-### 2. Configure Variáveis de Ambiente
+### 2. Configure Environment Variables
 
-Copie o arquivo `.env.example` e ajuste as configurações necessárias (APIs, caminhos, configurações do banco, etc.):
+Copy the `.env.example` file and adjust the necessary settings (APIs, paths, database config, etc.):
 
 ```bash
 cp .env.example .env
 ```
 
-O projeto utiliza um arquivo `.env` para armazenar chaves de API usadas para acessar dados da **Binance** e da **CoinMarketCap**.
+The project uses a `.env` file to store API keys used to access **Binance** and **CoinMarketCap** data.
 
-| Variável                | Descrição                                                                                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `COINMARKETCAP_API_KEY` | Sua chave da API da [CoinMarketCap](https://coinmarketcap.com/api/), usada para obter dados atualizados de capitalização de mercado, volume, rankings, etc. |
-| `BINANCE_API_KEY`       | Chave pública da API da [Binance](https://www.binance.com/en/support/faq/360002502072) para acessar dados de preços, ordens e saldo.                        |
-| `BINANCE_API_SECRET`    | Chave secreta da API da Binance, usada para autenticação e operações com a conta.                                                                           |
+| Variable                | Description                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `COINMARKETCAP_API_KEY` | Your [CoinMarketCap](https://coinmarketcap.com/api/) API key, used to fetch market cap data, volume, rankings, etc.            |
+| `BINANCE_API_KEY`       | Public API key from [Binance](https://www.binance.com/en/support/faq/360002502072), used for price data, orders, and balances. |
+| `BINANCE_API_SECRET`    | Secret Binance API key, used for authentication and account operations.                                                        |
 
-> 💡 Se você pretende apenas coletar dados públicos da Binance (como preços e volumes), as chaves `BINANCE_API_KEY` e `BINANCE_API_SECRET` podem ser deixadas em branco — mas são obrigatórias para ações como criação de ordens ou consulta de saldo.
+> 💡 If you're only collecting public data from Binance (such as prices and volumes), the `BINANCE_API_KEY` and `BINANCE_API_SECRET` can be left empty — but they are required for actions like placing orders or checking balances.
 
-> ⚠️ **Segurança**: Nunca compartilhe seu arquivo `.env`. Ele contém informações sensíveis e já está protegido pelo `.gitignore`.
+> ⚠️ **Security**: Never share your `.env` file. It contains sensitive information and is already protected via `.gitignore`.
 
-## 🐳 Ambiente com DevContainers (Recomendado)
+## 🐳 DevContainer Environment (Recommended)
 
-O projeto já vem preparado com um ambiente de desenvolvimento completo usando **Docker** e **DevContainers**, o que garante que todas as dependências de Go, Python e bibliotecas nativas estejam prontas para uso.
+This project is fully prepared for a **Docker + DevContainer** environment, which ensures all Go, Python, and native library dependencies are ready to use.
 
-### ✅ Passos:
+### ✅ Steps:
 
-1. Instale o [Docker Desktop](https://www.docker.com/products/docker-desktop)
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-2. Instale o [VSCode](https://code.visualstudio.com/)
+2. Install [VSCode](https://code.visualstudio.com/)
 
-3. Instale a extensão [DevContainers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) no VSCode
+3. Install the [DevContainers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) in VSCode
 
-4. Abra o projeto no VSCode e pressione `F1` ou `Ctrl+Shift+P`, depois selecione:
+4. Open the project in VSCode and press `F1` or `Ctrl+Shift+P`, then select:
 
    ```
    Dev Containers: Reopen in Container
    ```
 
-5. Aguarde a construção automática do container com o ambiente completo (Go + Python + dependências)
+5. Wait for the container to be automatically built with the complete environment (Go + Python + dependencies)
 
-> ⚠️ **Importante**: Tanto o ambiente **Go** quanto o **Python** devem ser configurados, pois o bot principal é escrito em Go, mas ele executa periodicamente scripts em Python para análise e modelagem. Ambos são necessários para o funcionamento completo do sistema.
+> ⚠️ **Important**: Both **Go** and **Python** environments must be set up, as the main bot is written in Go, but periodically executes Python scripts for analysis and modeling. Both are required for full system functionality.
 
-6. Após carregado:
+6. After setup is complete:
 
-   * Execute o script de setup Python:
+   * Run the Python setup script:
 
      ```bash
      cd src/scripts-py
@@ -100,25 +100,25 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
      pip install -r requirements.txt
      ```
 
-   * Agora, você pode executar normalmente os scripts Python ou rodar o bot em Go:
+   * Now, you can run the Python scripts or start the Go bot:
 
      ```bash
      go run .
      ```
 
-## ⚙️ Etapas Manuais (Se não quiser usar o container)
+## ⚙️ Manual Setup (If not using containers)
 
-> ⚠️ **Importante**: Tanto o ambiente **Go** quanto o **Python** devem ser configurados, pois o bot principal é escrito em Go, mas ele executa periodicamente scripts em Python para análise e modelagem. Ambos são necessários para o funcionamento completo do sistema.
+> ⚠️ **Important**: Both **Go** and **Python** environments must be configured, as the main bot is written in Go and depends on Python scripts for analysis and modeling.
 
 ### Python
 
-1. Navegue até a pasta de scripts em Python:
+1. Navigate to the Python scripts folder:
 
    ```bash
    cd src/scripts-py
    ```
 
-2. Crie um ambiente virtual:
+2. Create a virtual environment:
 
    ```bash
    python -m venv .venv
@@ -126,13 +126,13 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
    .venv\Scripts\activate     # Windows
    ```
 
-3. Instale as dependências:
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Teste o script (opcional):
+4. Test a script (optional):
 
    ```bash
    python generate_models.py
@@ -140,46 +140,46 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
 
 ### Go
 
-1. Volte para a raiz do projeto (se ainda estiver em `src/scripts-py`):
+1. Return to the project root (if you're still in `src/scripts-py`):
 
    ```bash
    cd ../../
    ```
 
-2. Instale as dependências:
+2. Install Go dependencies:
 
    ```bash
    go mod tidy
    ```
 
-3. Execute o bot:
+3. Run the bot:
 
    ```bash
    go run .
    ```
 
-## 🎁 Suporte a CUDA
+## 🎁 CUDA Support
 
-Se você possui uma GPU NVIDIA com suporte a CUDA, o DevContainer pode aproveitar o poder da GPU para acelerar o treinamento dos modelos.
+If you have an NVIDIA GPU with CUDA support, the DevContainer can leverage GPU power to speed up model training.
 
-Requisitos:
+Requirements:
 
-* Instalar [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-* Usar o Docker com suporte a GPU
-* Rodar com o seguinte comando:
+* Install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+* Use Docker with GPU support
+* Run using the following command:
 
 ```bash
 docker compose --profile cuda up
 ```
 
-## 📚 Documentação Completa
+## 📚 Full Documentation
 
-Para instruções detalhadas de uso, parâmetros disponíveis, exemplos de execução, estrutura dos scripts e mais, acesse a documentação completa do projeto:
+For detailed usage instructions, available parameters, execution examples, script structure, and more, check out the full project documentation:
 
-👉 **[📖 Acessar Documentação do Projeto](./docs/USAGE.md)**
+👉 **[📖 View Project Documentation](./docs/USAGE.md)**
 
-> O arquivo `USAGE.md` contém tudo o que você precisa para utilizar o bot corretamente, incluindo como treinar o modelo, configurar os parâmetros de entrada e executar o sistema em diferentes modos.
+> The `USAGE.md` file contains everything you need to use the bot properly, including how to train the model, configure input parameters, and run the system in different modes.
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
