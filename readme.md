@@ -87,7 +87,7 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
 
 5. Aguarde a construção automática do container com o ambiente completo (Go + Python + dependências)
 
-> ⚠️ **Importante**: o ambiente **Python deve ser configurado primeiro**, pois o bot em Go executa periodicamente os scripts em python.
+> ⚠️ **Importante**: Tanto o ambiente **Go** quanto o **Python** devem ser configurados, pois o bot principal é escrito em Go, mas ele executa periodicamente scripts em Python para análise e modelagem. Ambos são necessários para o funcionamento completo do sistema.
 
 6. Após carregado:
 
@@ -108,7 +108,7 @@ O projeto já vem preparado com um ambiente de desenvolvimento completo usando *
 
 ## ⚙️ Etapas Manuais (Se não quiser usar o container)
 
-> ⚠️ **Importante**: o ambiente **Python deve ser configurado primeiro**, pois o bot em Go executa periodicamente os scripts em python.
+> ⚠️ **Importante**: Tanto o ambiente **Go** quanto o **Python** devem ser configurados, pois o bot principal é escrito em Go, mas ele executa periodicamente scripts em Python para análise e modelagem. Ambos são necessários para o funcionamento completo do sistema.
 
 ### Python
 
