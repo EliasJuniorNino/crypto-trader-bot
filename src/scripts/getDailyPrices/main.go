@@ -1,11 +1,17 @@
 package getDailyPrices
 
 import (
+	"app/src/models"
 	"database/sql"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -29,28 +35,48 @@ func Main() {
 
 	for _, symbol := range cryptos {
 		// Exemplo: Inserir histórico de preços
-		priceHistory := []priceHistory{
-			{
-				Date:                    time.Now(),
-				Price:                   50000.0,
-				CryptoID:                1,
-				ExchangeID:              1,
-				OpenTime:                time.Now().Unix(),
-				OpenPrice:               49500.0,
-				HighPrice:               50500.0,
-				LowPrice:                49000.0,
-				ClosePrice:              50000.0,
-				Volume:                  123.456,
-				CloseTime:               time.Now().Add(time.Minute * 1).Unix(),
-				BaseAssetVolume:         123.456,
-				NumberOfTrades:          100,
-				TakerBuyVolume:          60.0,
-				TakerBuyBaseAssetVolume: 60.0,
-			},
-			// Adicione mais registros conforme necessário
+		priceHistoryList := []priceHistory{}
+
+		startTime := startOfDay(time.Now().UTC())
+		endTime := startTime.Add(1 * time.Hour)
+		klines, err := fetchBinanceKlines(symbol, startTime, endTime)
+		if err != nil {
+			log.Printf("Erro ao buscar klines da Binance para %s: %v", symbol, err)
+			continue
 		}
 
-		err = savePriceHistoryToCSV(db, symbol, priceHistory)
+		for _, kline := range klines {
+			date := time.UnixMilli(kline.CloseTime)
+			date = date.Truncate(time.Minute)
+			openPrice, _ := strconv.ParseFloat(kline.Open, 64)
+			highPrice, _ := strconv.ParseFloat(kline.High, 64)
+			lowPrice, _ := strconv.ParseFloat(kline.Low, 64)
+			closePrice, _ := strconv.ParseFloat(kline.Close, 64)
+			volume, _ := strconv.ParseFloat(kline.Volume, 64)
+			baseVolume, _ := strconv.ParseFloat(kline.QuoteAssetVolume, 64)
+			takerBuyVolume, _ := strconv.ParseFloat(kline.TakerBuyQuoteVolume, 64)
+			takerBuyBaseVolume, _ := strconv.ParseFloat(kline.TakerBuyBaseVolume, 64)
+
+			priceHistoryList = append(priceHistoryList, priceHistory{
+				Date:                    date, // ou time.Now() se preferir
+				Price:                   closePrice,
+				CryptoID:                1, // ajuste conforme necessário
+				ExchangeID:              1, // ajuste conforme necessário
+				OpenTime:                kline.OpenTime,
+				OpenPrice:               openPrice,
+				HighPrice:               highPrice,
+				LowPrice:                lowPrice,
+				ClosePrice:              closePrice,
+				Volume:                  volume,
+				CloseTime:               kline.CloseTime,
+				BaseAssetVolume:         baseVolume,
+				NumberOfTrades:          kline.NumberOfTrades,
+				TakerBuyVolume:          takerBuyVolume,
+				TakerBuyBaseAssetVolume: takerBuyBaseVolume,
+			})
+		}
+
+		err = savePriceHistoryToCSV(symbol, priceHistoryList)
 		if err != nil {
 			log.Printf("Erro ao inserir histórico de preços: %v", err)
 		} else {
@@ -59,7 +85,88 @@ func Main() {
 	}
 }
 
-func savePriceHistoryToCSV(db *sql.DB, symbol string, priceHistory []priceHistory) error {
+// Retorna o histórico de preços da API da Binance para a criptomoeda symbol
+func fetchBinanceKlines(symbol string, startTime time.Time, endTime time.Time) ([]models.BinanceKline, error) {
+	// Define a URL da API para buscar o histórico de Klines (ex: 1 minuto)
+	symbolParam := symbol + "USDT"
+
+	startTimeStr := fmt.Sprintf("%d", startTime.UnixMilli())
+	endTimeStr := fmt.Sprintf("%d", endTime.UnixMilli())
+
+	baseURL := "https://api.binance.com/api/v3/klines"
+	u, _ := url.Parse(baseURL)
+
+	query := url.Values{}
+	query.Set("symbol", symbolParam)
+	query.Set("interval", "1m")
+	query.Set("limit", "60")
+	query.Set("startTime", startTimeStr)
+	query.Set("endTime", endTimeStr)
+
+	u.RawQuery = query.Encode()
+	finalURL := u.String()
+
+	// Faz a requisição HTTP
+	resp, err := http.Get(finalURL)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao fazer requisição para Binance: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Verifica se o status HTTP é 200
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("resposta inválida da Binance: %s", resp.Status)
+	}
+
+	// Lê o corpo da resposta
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao ler corpo da resposta: %w", err)
+	}
+
+	// Decodifica o JSON em um array genérico
+	var rawKlines [][]any
+	if err := json.Unmarshal(body, &rawKlines); err != nil {
+		return nil, fmt.Errorf("erro ao decodificar JSON: %w", err)
+	}
+
+	var klines []models.BinanceKline
+	for _, k := range rawKlines {
+		if len(k) < 12 {
+			continue
+		}
+		openTime, _ := toInt64(k[0])
+		open, _ := toString(k[1])
+		high, _ := toString(k[2])
+		low, _ := toString(k[3])
+		closeVal, _ := toString(k[4])
+		volume, _ := toString(k[5])
+		closeTime, _ := toInt64(k[6])
+		quoteAssetVolume, _ := toString(k[7])
+		numberOfTrades, _ := toInt(k[8])
+		takerBuyBaseVolume, _ := toString(k[9])
+		takerBuyQuoteVolume, _ := toString(k[10])
+		// ignore k[11] (unused)
+
+		klines = append(klines, models.BinanceKline{
+			OpenTime:            openTime,
+			Open:                open,
+			High:                high,
+			Low:                 low,
+			Close:               closeVal,
+			Volume:              volume,
+			CloseTime:           closeTime,
+			QuoteAssetVolume:    quoteAssetVolume,
+			NumberOfTrades:      numberOfTrades,
+			TakerBuyBaseVolume:  takerBuyBaseVolume,
+			TakerBuyQuoteVolume: takerBuyQuoteVolume,
+		})
+	}
+
+	return klines, nil
+}
+
+func savePriceHistoryToCSV(symbol string, priceHistory []priceHistory) error {
 	dir_path := "data/last_history/1m"
 
 	// Verifica se o diretório existe
@@ -135,6 +242,47 @@ func fetchCryptos(db *sql.DB) ([]string, error) {
 		symbols = append(symbols, symbol)
 	}
 	return symbols, nil
+}
+
+func toInt64(val interface{}) (int64, error) {
+	switch v := val.(type) {
+	case float64:
+		return int64(v), nil
+	case string:
+		return strconv.ParseInt(v, 10, 64)
+	default:
+		return 0, fmt.Errorf("cannot convert %T to int64", val)
+	}
+}
+
+func toString(val interface{}) (string, error) {
+	switch v := val.(type) {
+	case string:
+		return v, nil
+	case float64:
+		return fmt.Sprintf("%f", v), nil
+	case int:
+		return strconv.Itoa(v), nil
+	default:
+		return "", fmt.Errorf("cannot convert %T to string", val)
+	}
+}
+
+func toInt(val interface{}) (int, error) {
+	switch v := val.(type) {
+	case float64:
+		return int(v), nil
+	case string:
+		i, err := strconv.Atoi(v)
+		return i, err
+	default:
+		return 0, fmt.Errorf("cannot convert %T to int", val)
+	}
+}
+
+// startOfDay returns the time at 00:00:00 UTC for the given time.
+func startOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 // PriceHistory representa um registro de histórico de preços
