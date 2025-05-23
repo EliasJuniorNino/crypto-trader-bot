@@ -30,57 +30,68 @@ func Main() {
 	if err != nil {
 		log.Printf("Erro ao buscar criptomoedas: %v", err)
 	} else {
-		log.Printf("Criptomoedas encontradas: %v", cryptos)
+		log.Printf("%d Criptomoedas encontradas!", len(cryptos))
+	}
+
+	priceHistoryMap := make(map[string][]priceHistory)
+
+	start := startOfCurrentDay().UTC()
+
+	for i := start; i.Add(time.Hour).Before(time.Now().UTC()); i = i.Add(time.Hour) {
+		startTime := i
+		endTime := i.Add(time.Hour)
+
+		for _, symbol := range cryptos {
+			priceHistoryList := priceHistoryMap[symbol]
+
+			klines, err := fetchBinanceKlines(symbol, startTime, endTime)
+			if err != nil {
+				log.Printf("Erro ao buscar klines da Binance para %s: %v", symbol, err)
+				continue
+			}
+
+			for _, kline := range klines {
+				date := time.UnixMilli(kline.CloseTime)
+				date = date.Truncate(time.Minute)
+				openPrice, _ := strconv.ParseFloat(kline.Open, 64)
+				highPrice, _ := strconv.ParseFloat(kline.High, 64)
+				lowPrice, _ := strconv.ParseFloat(kline.Low, 64)
+				closePrice, _ := strconv.ParseFloat(kline.Close, 64)
+				volume, _ := strconv.ParseFloat(kline.Volume, 64)
+				baseVolume, _ := strconv.ParseFloat(kline.QuoteAssetVolume, 64)
+				takerBuyVolume, _ := strconv.ParseFloat(kline.TakerBuyQuoteVolume, 64)
+				takerBuyBaseVolume, _ := strconv.ParseFloat(kline.TakerBuyBaseVolume, 64)
+
+				priceHistoryList = append(priceHistoryList, priceHistory{
+					Date:                    date, // ou time.Now() se preferir
+					Price:                   closePrice,
+					CryptoID:                1, // ajuste conforme necessário
+					ExchangeID:              1, // ajuste conforme necessário
+					OpenTime:                kline.OpenTime,
+					OpenPrice:               openPrice,
+					HighPrice:               highPrice,
+					LowPrice:                lowPrice,
+					ClosePrice:              closePrice,
+					Volume:                  volume,
+					CloseTime:               kline.CloseTime,
+					BaseAssetVolume:         baseVolume,
+					NumberOfTrades:          kline.NumberOfTrades,
+					TakerBuyVolume:          takerBuyVolume,
+					TakerBuyBaseAssetVolume: takerBuyBaseVolume,
+				})
+			}
+
+			priceHistoryMap[symbol] = priceHistoryList
+		}
+		log.Printf("Klines entre %s e %s -> OK", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
+		log.Printf("UTC Agora: %s", time.Now().UTC().Format(time.RFC3339))
 	}
 
 	for _, symbol := range cryptos {
-		// Exemplo: Inserir histórico de preços
-		priceHistoryList := []priceHistory{}
-
-		startTime := startOfDay(time.Now().UTC())
-		endTime := startTime.Add(1 * time.Hour)
-		klines, err := fetchBinanceKlines(symbol, startTime, endTime)
-		if err != nil {
-			log.Printf("Erro ao buscar klines da Binance para %s: %v", symbol, err)
-			continue
-		}
-
-		for _, kline := range klines {
-			date := time.UnixMilli(kline.CloseTime)
-			date = date.Truncate(time.Minute)
-			openPrice, _ := strconv.ParseFloat(kline.Open, 64)
-			highPrice, _ := strconv.ParseFloat(kline.High, 64)
-			lowPrice, _ := strconv.ParseFloat(kline.Low, 64)
-			closePrice, _ := strconv.ParseFloat(kline.Close, 64)
-			volume, _ := strconv.ParseFloat(kline.Volume, 64)
-			baseVolume, _ := strconv.ParseFloat(kline.QuoteAssetVolume, 64)
-			takerBuyVolume, _ := strconv.ParseFloat(kline.TakerBuyQuoteVolume, 64)
-			takerBuyBaseVolume, _ := strconv.ParseFloat(kline.TakerBuyBaseVolume, 64)
-
-			priceHistoryList = append(priceHistoryList, priceHistory{
-				Date:                    date, // ou time.Now() se preferir
-				Price:                   closePrice,
-				CryptoID:                1, // ajuste conforme necessário
-				ExchangeID:              1, // ajuste conforme necessário
-				OpenTime:                kline.OpenTime,
-				OpenPrice:               openPrice,
-				HighPrice:               highPrice,
-				LowPrice:                lowPrice,
-				ClosePrice:              closePrice,
-				Volume:                  volume,
-				CloseTime:               kline.CloseTime,
-				BaseAssetVolume:         baseVolume,
-				NumberOfTrades:          kline.NumberOfTrades,
-				TakerBuyVolume:          takerBuyVolume,
-				TakerBuyBaseAssetVolume: takerBuyBaseVolume,
-			})
-		}
-
+		priceHistoryList := priceHistoryMap[symbol]
 		err = savePriceHistoryToCSV(symbol, priceHistoryList)
 		if err != nil {
 			log.Printf("Erro ao inserir histórico de preços: %v", err)
-		} else {
-			log.Printf("%s - inserido com sucesso.", symbol)
 		}
 	}
 }
@@ -281,7 +292,8 @@ func toInt(val interface{}) (int, error) {
 }
 
 // startOfDay returns the time at 00:00:00 UTC for the given time.
-func startOfDay(t time.Time) time.Time {
+func startOfCurrentDay() time.Time {
+	t := time.Now().UTC().Add(-4 * time.Hour) // Ajuste para UTC-4
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
 
