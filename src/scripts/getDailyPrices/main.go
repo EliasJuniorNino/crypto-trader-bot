@@ -1,7 +1,9 @@
 package getDailyPrices
 
 import (
+	"app/src/database"
 	"app/src/models"
+	"app/src/utils"
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
@@ -19,7 +21,7 @@ import (
 
 func Main() {
 	// Abrir conexão com o banco de dados SQLite
-	db, err := sql.Open("sqlite3", "database/database.db")
+	db, err := database.ConnectDatabase()
 	if err != nil {
 		log.Fatalf("Erro ao abrir o banco de dados: %v", err)
 	}
@@ -33,9 +35,9 @@ func Main() {
 		log.Printf("%d Criptomoedas encontradas!", len(cryptos))
 	}
 
-	priceHistoryMap := make(map[string][]priceHistory)
+	priceHistoryMap := make(map[string][]models.BinancePriceHistory)
 
-	start := startOfCurrentDay().UTC()
+	start := utils.StartOfCurrentDayUTC()
 
 	for i := start; i.Add(time.Hour).Before(time.Now().UTC()); i = i.Add(time.Hour) {
 		startTime := i
@@ -62,7 +64,7 @@ func Main() {
 				takerBuyVolume, _ := strconv.ParseFloat(kline.TakerBuyQuoteVolume, 64)
 				takerBuyBaseVolume, _ := strconv.ParseFloat(kline.TakerBuyBaseVolume, 64)
 
-				priceHistoryList = append(priceHistoryList, priceHistory{
+				priceHistoryList = append(priceHistoryList, models.BinancePriceHistory{
 					Date:                    date, // ou time.Now() se preferir
 					Price:                   closePrice,
 					CryptoID:                1, // ajuste conforme necessário
@@ -177,7 +179,7 @@ func fetchBinanceKlines(symbol string, startTime time.Time, endTime time.Time) (
 	return klines, nil
 }
 
-func savePriceHistoryToCSV(symbol string, priceHistory []priceHistory) error {
+func savePriceHistoryToCSV(symbol string, priceHistory []models.BinancePriceHistory) error {
 	dir_path := "data/last_history/1m"
 
 	// Verifica se o diretório existe
@@ -289,29 +291,4 @@ func toInt(val interface{}) (int, error) {
 	default:
 		return 0, fmt.Errorf("cannot convert %T to int", val)
 	}
-}
-
-// startOfDay returns the time at 00:00:00 UTC for the given time.
-func startOfCurrentDay() time.Time {
-	t := time.Now().UTC().Add(-4 * time.Hour) // Ajuste para UTC-4
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
-}
-
-// PriceHistory representa um registro de histórico de preços
-type priceHistory struct {
-	Date                    time.Time
-	Price                   float64
-	CryptoID                int
-	ExchangeID              int
-	OpenTime                int64
-	OpenPrice               float64
-	HighPrice               float64
-	LowPrice                float64
-	ClosePrice              float64
-	Volume                  float64
-	CloseTime               int64
-	BaseAssetVolume         float64
-	NumberOfTrades          int
-	TakerBuyVolume          float64
-	TakerBuyBaseAssetVolume float64
 }

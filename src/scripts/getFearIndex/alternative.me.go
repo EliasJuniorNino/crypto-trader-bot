@@ -1,6 +1,9 @@
 package getFearIndex
 
 import (
+	"app/src/constants"
+	"app/src/dto"
+	"app/src/models"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -12,17 +15,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-const alternativeAPI = "https://api.alternative.me/fng/?limit=9999999999999999999"
-
-type alternativeAPIResponse struct {
-	Data []alternativeFearData `json:"data"`
-}
-
-type alternativeFearData struct {
-	Timestamp string `json:"timestamp"`
-	Value     string `json:"value"`
-}
 
 func GetFearAlternativeMe() {
 	fmt.Println("=== Importador do índice de medo/ganância - Alternative.me ===")
@@ -90,9 +82,9 @@ func GetFearAlternativeMe() {
 	fmt.Printf("%d registros inseridos com sucesso!\n", inserted)
 }
 
-func fetchAlternativeFearData() ([]alternativeFearData, error) {
+func fetchAlternativeFearData() ([]models.AlternativeFearData, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(alternativeAPI)
+	resp, err := client.Get(constants.ALTERNATIVE_ME_API + "/?limit=9999999999999999999")
 	if err != nil {
 		return nil, fmt.Errorf("erro HTTP: %v", err)
 	}
@@ -103,7 +95,7 @@ func fetchAlternativeFearData() ([]alternativeFearData, error) {
 		return nil, fmt.Errorf("resposta inválida: %s", string(body))
 	}
 
-	var apiResp alternativeAPIResponse
+	var apiResp dto.AlternativeAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("erro ao decodificar JSON: %v", err)
 	}

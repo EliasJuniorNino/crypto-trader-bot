@@ -2,6 +2,7 @@ package ui
 
 import (
 	"app/src/scripts/disableCryptos"
+	"app/src/scripts/generateDataset"
 	"app/src/scripts/getBinanceData"
 	"app/src/scripts/getDailyPrices"
 	"app/src/scripts/getFearIndex"
@@ -37,6 +38,20 @@ func MainCMD() {
 			fmt.Println("\n🔍 Executando DisableCryptos...")
 			minDate, maxDate := getDateRange()
 			disableCryptos.Main(minDate, maxDate)
+		case "6":
+			fmt.Println("\n🔍 Executando GenerateDataset...")
+			startDateStr, endDateStr := getDateRange()
+			startDate, err := time.Parse("2006-01-02", startDateStr)
+			if err != nil {
+				fmt.Println("❌ Erro ao converter data inicial:", err)
+				continue
+			}
+			endDate, err := time.Parse("2006-01-02", endDateStr)
+			if err != nil {
+				fmt.Println("❌ Erro ao converter data final:", err)
+				continue
+			}
+			generateDataset.Main(startDate, endDate)
 		default:
 			fmt.Println("\n❌ Opção inválida! Por favor, escolha uma opção válida.")
 		}
@@ -54,6 +69,7 @@ func showMenu() {
 	fmt.Println("3. 📈 GetBinanceCurrentDayCryptos")
 	fmt.Println("4. 📦 DownloadBinanceCryptoData")
 	fmt.Println("5. 🔄 DisableCryptos")
+	fmt.Println("6. 📊 GenerateDataset")
 	fmt.Println(strings.Repeat("=", 40))
 	fmt.Print("Escolha uma opção: ")
 }

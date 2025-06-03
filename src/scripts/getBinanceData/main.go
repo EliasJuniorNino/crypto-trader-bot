@@ -1,8 +1,8 @@
 package getBinanceData
 
 import (
+	"app/src/database"
 	"archive/zip"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,19 +30,9 @@ type enabledCrypto struct {
 	IsEnabled  int
 }
 
-// Conectar ao banco de dados SQLite
-func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "database/database.db")
-	if err != nil {
-		return nil, fmt.Errorf("erro ao conectar ao banco SQLite: %w", err)
-	}
-	log.Println("Conexão com o banco SQLite estabelecida.")
-	return db, nil
-}
-
 // Obter criptomoedas habilitadas
 func getEnabledCryptos() ([]enabledCrypto, error) {
-	db, err := connectDB()
+	db, err := database.ConnectDatabase()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +65,7 @@ func getEnabledCryptos() ([]enabledCrypto, error) {
 
 // Salvar progresso em arquivo JSON
 func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
-	prrogressFile := "data/progress.json"
+	prrogressFile := os.Getenv("LOCAL_DATA_FOLDER") + "progress.json"
 
 	// Garantir que o diretório data existe
 	if err := os.MkdirAll(filepath.Dir(prrogressFile), 0755); err != nil {

@@ -1,7 +1,7 @@
 package disableCryptos
 
 import (
-	"database/sql"
+	"app/src/database"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,11 +9,6 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
-)
-
-// Configurações globais
-const (
-	_sqliteDBPath = "database/database.db"
 )
 
 // Estrutura para criptomoedas habilitadas
@@ -24,18 +19,9 @@ type crypto struct {
 	IsEnabled  int
 }
 
-// Conectar ao banco de dados SQLite
-func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", _sqliteDBPath)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao conectar ao banco SQLite: %w", err)
-	}
-	return db, nil
-}
-
 // Obter criptomoedas habilitadas
 func getEnabledCryptos() ([]crypto, error) {
-	db, err := connectDB()
+	db, err := database.ConnectDatabase()
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +53,8 @@ func getEnabledCryptos() ([]crypto, error) {
 }
 
 // Desativar criptomoeda no banco de dados
-func _disableCrypto(cryptoID int) error {
-	db, err := connectDB()
+func disableCrypto(cryptoID int) error {
+	db, err := database.ConnectDatabase()
 	if err != nil {
 		return err
 	}
@@ -163,7 +149,7 @@ func Main(minDate, maxDate string) {
 		// Se retornou 404 em ambas as datas, desativar a crypto
 		if !availableMinDate || !availableMaxDate {
 			log.Printf("🚫 %s indisponível em uma das datas. Desativando...", symbol)
-			if err := _disableCrypto(crypto.ID); err != nil {
+			if err := disableCrypto(crypto.ID); err != nil {
 				log.Printf("❌ Erro ao desativar %s: %v", symbol, err)
 			}
 		} else {

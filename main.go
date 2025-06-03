@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/src/scripts/disableCryptos"
+	"app/src/scripts/generateDataset"
 	"app/src/scripts/getBinanceData"
 	"app/src/scripts/getDailyPrices"
 	"app/src/scripts/getFearIndex"
@@ -21,6 +22,7 @@ func main() {
 	getBinance := flag.Bool("GetBinanceCurrentDayCryptos", false, "Executa GetBinanceCurrentDayCryptos")
 	downloadBinance := flag.Bool("DownloadBinanceCryptoData", false, "Executa DownloadBinanceCryptoData")
 	disableCryptosFlag := flag.Bool("DisableCryptos", false, "Executa DisableCryptos")
+	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
 	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
 
@@ -64,6 +66,26 @@ func main() {
 		executouAlgum = true
 	}
 
+	if *generateDatasetFlag {
+		fmt.Println("🔍 Executando GenerateDataset...")
+		if *start == "" || *end == "" {
+			fmt.Println("❌ Para usar -GenerateDataset, forneça -start e -end no formato YYYY-MM-DD.")
+			return
+		}
+		startDate, err := time.Parse("2006-01-02", *start)
+		if err != nil {
+			fmt.Println("❌ Erro ao converter data inicial:", err)
+			return
+		}
+		endDate, err := time.Parse("2006-01-02", *end)
+		if err != nil {
+			fmt.Println("❌ Erro ao converter data final:", err)
+			return
+		}
+		generateDataset.Main(startDate, endDate)
+		executouAlgum = true
+	}
+
 	if *disableCryptosFlag {
 		if *start == "" || *end == "" {
 			fmt.Println("❌ Para usar -DisableCryptos, forneça -start e -end no formato YYYY-MM-DD.")
@@ -98,6 +120,7 @@ func showUsage() {
 	fmt.Println("  -GetBinanceCurrentDayCryptos → Executa GetBinanceCurrentDayCryptos")
 	fmt.Println("  -DownloadBinanceCryptoData   → Executa DownloadBinanceCryptoData")
 	fmt.Println("  -DisableCryptos              → Executa DisableCryptos (necessita -start e -end)")
+	fmt.Println("  -GenerateDataset             → Executa GenerateDataset")
 	fmt.Println()
 	fmt.Println("Exemplo:")
 	fmt.Println("  main.exe -DisableCryptos -start 2024-01-01 -end 2024-12-31")

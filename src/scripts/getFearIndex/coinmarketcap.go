@@ -1,6 +1,7 @@
 package getFearIndex
 
 import (
+	"app/src/constants"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -13,8 +14,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-const apiURL = "https://pro-api.coinmarketcap.com/v3/fear-and-greed/historical"
 
 type apiResponse struct {
 	Data []fearData `json:"data"`
@@ -92,7 +91,7 @@ func GetFearCoinmarketcap() {
 
 func fetchFearData(apiKey string, limit int) ([]fearData, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequest("GET", apiURL, nil)
+	req, err := http.NewRequest("GET", constants.COINMARKETCAP_FEAR_HISTORICAL_API, nil)
 	if err != nil {
 		return nil, err
 	}
