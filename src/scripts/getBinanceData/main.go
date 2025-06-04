@@ -63,6 +63,38 @@ func getEnabledCryptos() ([]enabledCrypto, error) {
 	return cryptos, nil
 }
 
+// Obter todas criptomoedas
+func getAllCryptos() ([]enabledCrypto, error) {
+	db, err := database.ConnectDatabase()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query(`
+		SELECT c.id, c.symbol, e.id AS exchange_id, c.is_enabled
+		FROM cryptos c
+		JOIN exchanges_cryptos ec ON c.id = ec.crypto_id
+		JOIN exchanges e ON ec.exchange_id = e.id
+		WHERE LOWER(e.name) LIKE '%binance%';
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar criptos: %w", err)
+	}
+	defer rows.Close()
+
+	var cryptos []enabledCrypto
+	for rows.Next() {
+		var crypto enabledCrypto
+		if err := rows.Scan(&crypto.ID, &crypto.Symbol, &crypto.ExchangeID, &crypto.IsEnabled); err != nil {
+			return nil, fmt.Errorf("erro ao ler linha: %w", err)
+		}
+		cryptos = append(cryptos, crypto)
+	}
+
+	return cryptos, nil
+}
+
 // Salvar progresso em arquivo JSON
 func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
 	prrogressFile := os.Getenv("LOCAL_DATA_FOLDER") + "progress.json"
@@ -313,13 +345,18 @@ func extractZip(zipPath, destDir string) error {
 	return nil
 }
 
-func Main() {
+func Main(isAllCryptosEnabled bool) {
 	// Configurar logging
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
 	log.SetPrefix("INFO: ")
 
-	// Obter criptos habilitadas
-	cryptos, err := getEnabledCryptos()
+	var cryptos []enabledCrypto
+	var err error
+	if isAllCryptosEnabled {
+		cryptos, err = getAllCryptos()
+	} else {
+		cryptos, err = getEnabledCryptos()
+	}
 	if err != nil {
 		log.Printf("Erro ao obter criptos: %v", err)
 		return

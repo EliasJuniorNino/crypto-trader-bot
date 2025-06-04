@@ -21,6 +21,7 @@ func main() {
 	fearAltMe := flag.Bool("GetFearAlternativeMe", false, "Executa GetFearAlternativeMe")
 	getBinance := flag.Bool("GetBinanceCurrentDayCryptos", false, "Executa GetBinanceCurrentDayCryptos")
 	downloadBinance := flag.Bool("DownloadBinanceCryptoData", false, "Executa DownloadBinanceCryptoData")
+	getAllCryptos := flag.Bool("GetAllCryptos", false, "Busca todas as criptomoedas")
 	disableCryptosFlag := flag.Bool("DisableCryptos", false, "Executa DisableCryptos")
 	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
@@ -62,7 +63,7 @@ func main() {
 
 	if *downloadBinance {
 		fmt.Println("🔍 Executando DownloadBinanceCryptoData...")
-		getBinanceData.Main()
+		getBinanceData.Main(*getAllCryptos)
 		executouAlgum = true
 	}
 

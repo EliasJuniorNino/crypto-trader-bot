@@ -14,6 +14,7 @@ import (
 )
 
 func MainCMD() {
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		showMenu()
 		choice := getUserChoice()
@@ -32,8 +33,11 @@ func MainCMD() {
 			fmt.Println("\n🔍 Executando GetBinanceCurrentDayCryptos...")
 			getDailyPrices.Main()
 		case "4":
+			fmt.Print("Buscar todas as criptomoedas? (s/n): ")
+			scanner.Scan()
+			isAllCryptosEnabled := strings.TrimSpace(scanner.Text())
 			fmt.Println("\n🔍 Executando DownloadBinanceCryptoData...")
-			getBinanceData.Main()
+			getBinanceData.Main(isAllCryptosEnabled == "s" || isAllCryptosEnabled == "S")
 		case "5":
 			fmt.Println("\n🔍 Executando DisableCryptos...")
 			minDate, maxDate := getDateRange()
