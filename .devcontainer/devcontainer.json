@@ -23,7 +23,8 @@
 				"qwtel.sqlite-viewer",
 				"golang.go",
 				"shivamkumar.go-extras",
-				"ms-vscode.makefile-tools"
+				"ms-vscode.makefile-tools",
+				"mechatroner.rainbow-csv"
 			],
 			"settings": {
 				"editor.formatOnSave": true
