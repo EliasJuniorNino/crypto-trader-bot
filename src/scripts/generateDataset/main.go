@@ -28,9 +28,71 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 		panic(err)
 	}
 
+	if err := clearFinalDataset(); err != nil {
+		log.Printf("Erro ao limpar o arquivo de dataset dataset_full.csv: %v", err)
+		return
+	}
+
+	isHeaderAdded := false
 	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
 		generateDatasetFile(i, cryptos, clearFiles)
+		mergeDatasetFile(i, &isHeaderAdded)
 	}
+}
+
+func mergeDatasetFile(currentTime time.Time, isHeaderAdded *bool) error {
+	yearStr := fixedCases(currentTime.Year())
+	monthStr := fixedCases(int(currentTime.Month()))
+	dayStr := fixedCases(currentTime.Day())
+
+	// Gera a data no formato YYYY-MM-DD
+	dateStr := yearStr + "-" + monthStr + "-" + dayStr
+
+	currentDatasetDir := filepath.Join("data", "datasets")
+	currentDatasetFilePath := filepath.Join(currentDatasetDir, "dataset-"+dateStr+".csv")
+
+	finalDatasetDir := filepath.Join("data")
+	finalDatasetFilePath := filepath.Join(finalDatasetDir, "dataset_full.csv")
+
+	// Abre o arquivo de origem
+	sourceFile, err := os.Open(currentDatasetFilePath)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	// Abre (ou cria) o arquivo final em modo append
+	destFile, err := os.OpenFile(finalDatasetFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	scanner := bufio.NewScanner(sourceFile)
+	writer := bufio.NewWriter(destFile)
+
+	linesCount := 0
+	isHeaderLine := true
+	for scanner.Scan() {
+		if isHeaderLine && *isHeaderAdded {
+			isHeaderLine = false
+			continue // ignora o cabeçalho
+		}
+		_, err := writer.WriteString(scanner.Text() + "\n")
+		if err != nil {
+			return err
+		}
+		*isHeaderAdded = true
+		linesCount++
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	log.Printf("%d Linhas de %s", linesCount, currentDatasetFilePath)
+
+	return writer.Flush()
 }
 
 func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles bool) error {
@@ -221,6 +283,31 @@ func getFileLine(filePath string, lineNumber int) (*models.BinanceKline, error) 
 		}
 	}
 	return nil, fmt.Errorf("não foi possível ler a linha %d do arquivo %s", lineNumber, filePath)
+}
+
+func clearFinalDataset() error {
+	finalDatasetDir := filepath.Join("data")
+	finalDatasetFilePath := filepath.Join(finalDatasetDir, "dataset_full.csv")
+
+	// Cria ou abre o arquivo de dataset para escrita (append ou novo)
+	datasetFile, err := os.OpenFile(finalDatasetFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Printf("Erro ao abrir ou criar o arquivo de dataset %s: %v", finalDatasetFilePath, err)
+		return err
+	}
+	defer datasetFile.Close()
+
+	// Cria um writer para o arquivo de dataset
+	datasetWriter := bufio.NewWriter(datasetFile)
+	defer datasetWriter.Flush()
+
+	// Limpa o arquivo de dataset se já existir
+	if err := datasetFile.Truncate(0); err != nil {
+		log.Printf("Erro ao limpar o arquivo de dataset %s: %v", finalDatasetFilePath, err)
+		return err
+	}
+
+	return nil
 }
 
 // busca criptomoedas da binance habilitadas
