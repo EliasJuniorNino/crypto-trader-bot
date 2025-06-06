@@ -97,7 +97,7 @@ func getAllCryptos() ([]enabledCrypto, error) {
 
 // Salvar progresso em arquivo JSON
 func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
-	prrogressFile := os.Getenv("LOCAL_DATA_FOLDER") + "progress.json"
+	prrogressFile := "data/progress.json"
 
 	// Garantir que o diretório data existe
 	if err := os.MkdirAll(filepath.Dir(prrogressFile), 0755); err != nil {
@@ -239,6 +239,11 @@ func downloadAndExtractKlines(pairs []string, interval string, daysToProcess int
 				continue
 			}
 
+			if isOfflineLink(url) {
+				log.Printf("❌ Link offline: %s", url)
+				continue
+			}
+
 			log.Printf("⬇️ Baixando: %s", url)
 
 			// Fazer o download do arquivo
@@ -249,12 +254,14 @@ func downloadAndExtractKlines(pairs []string, interval string, daysToProcess int
 			resp, err := client.Get(url)
 			if err != nil {
 				log.Printf("⚠️ Erro ao baixar %s: %v", fileName, err)
+				insertOfflineLink(url)
 				continue
 			}
 
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("❌ Arquivo não encontrado: %s (status %d)", fileName, resp.StatusCode)
 				resp.Body.Close()
+				insertOfflineLink(url)
 				continue
 			}
 
@@ -405,5 +412,93 @@ func Main(isAllCryptosEnabled bool) {
 		}
 	} else {
 		log.Println("Nenhuma criptomoeda habilitada encontrada.")
+	}
+}
+
+func isOfflineLink(link string) bool {
+	offlineFile := "data/offline_links.txt"
+	// Verifica se o diretório existe, se não, cria
+	if err := os.MkdirAll(filepath.Dir(offlineFile), 0755); err != nil {
+		log.Printf("Erro ao criar diretório para offline_links.txt: %v", err)
+		return false
+	}
+	// Tenta abrir o arquivo, se não existir, cria
+	if _, err := os.Stat(offlineFile); os.IsNotExist(err) {
+		file, err := os.Create(offlineFile)
+		if err != nil {
+			log.Printf("Erro ao criar offline_links.txt: %v", err)
+			return false
+		}
+		file.Close()
+	}
+
+	// Se o arquivo existir, verifica se alguma linha contém o link
+	content, err := os.ReadFile(offlineFile)
+	if err != nil {
+		log.Printf("Erro ao ler offline_links.txt: %v", err)
+		return false
+	}
+	lines := string(content)
+	if lines != "" {
+		for _, line := range splitLines(lines) {
+			if line != "" && contains(line, link) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// contains verifica se substr está contido em s
+func contains(s, substr string) bool {
+	return len(substr) > 0 && len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && (len(s) > 0 && len(substr) > 0 && (len(s) >= len(substr) && (func() bool {
+		for i := 0; i <= len(s)-len(substr); i++ {
+			if s[i:i+len(substr)] == substr {
+				return true
+			}
+		}
+		return false
+	}())))))
+}
+
+// splitLines divide uma string em linhas, suportando \n e \r\n
+func splitLines(s string) []string {
+	var lines []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\n' {
+			line := s[start:i]
+			if len(line) > 0 && line[len(line)-1] == '\r' {
+				line = line[:len(line)-1]
+			}
+			lines = append(lines, line)
+			start = i + 1
+		}
+	}
+	if start < len(s) {
+		lines = append(lines, s[start:])
+	}
+	return lines
+}
+
+func insertOfflineLink(link string) {
+	offlineFile := "data/offline_links.txt"
+
+	// Verifica se o diretório existe, se não, cria
+	if err := os.MkdirAll(filepath.Dir(offlineFile), 0755); err != nil {
+		log.Printf("Erro ao criar diretório para offline_links.txt: %v", err)
+		return
+	}
+
+	// Abre o arquivo offline_links.txt para adicionar o link
+	file, err := os.OpenFile(offlineFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Erro ao abrir offline_links.txt: %v", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(link + "\n"); err != nil {
+		log.Printf("Erro ao escrever no arquivo offline_links.txt: %v", err)
 	}
 }
