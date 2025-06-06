@@ -42,6 +42,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
 
 	datasetDir := filepath.Join("data", "datasets")
+	datasetTempFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".tmp")
 	datasetFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".csv")
 
 	// Verifica se o arquivo de dataset já existe
@@ -73,12 +74,17 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	}
 
 	// Cria ou abre o arquivo de dataset para escrita (append ou novo)
-
-	datasetFile, err := os.OpenFile(datasetFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	datasetFile, err := os.OpenFile(datasetTempFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
-		log.Printf("Erro ao abrir ou criar o arquivo de dataset %s: %v", datasetFilePath, err)
+		log.Printf("Erro ao abrir ou criar o arquivo de dataset %s: %v", datasetTempFilePath, err)
 		return err
 	}
+	defer func() {
+		// Renomeia o arquivo de .tmp para .csv após a escrita bem-sucedida
+		if err := os.Rename(datasetTempFilePath, datasetFilePath); err != nil {
+			log.Printf("Erro ao renomear o arquivo de dataset: %v", err)
+		}
+	}()
 	defer datasetFile.Close()
 
 	// Cria um writer para o arquivo de dataset
@@ -170,6 +176,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 			log.Printf("Linha %d adicionada ao dataset para a data %s", lineNumber, dateStr)
 		}
 	}
+
 	log.Printf("Dataset gerado com sucesso em: %s", datasetFilePath)
 	return nil
 }
