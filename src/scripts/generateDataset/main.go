@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func Main(initialDate time.Time, endDate time.Time) {
+func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 	// Conexão com o banco de dados
 	db, err := database.ConnectDatabase()
 	if err != nil {
@@ -29,17 +29,28 @@ func Main(initialDate time.Time, endDate time.Time) {
 	}
 
 	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
-		generateDatasetFile(i, cryptos)
+		generateDatasetFile(i, cryptos, clearFiles)
 	}
 }
 
-func generateDatasetFile(currentTime time.Time, cryptos []string) error {
+func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles bool) error {
 	yearStr := fixedCases(currentTime.Year())
 	monthStr := fixedCases(int(currentTime.Month()))
 	dayStr := fixedCases(currentTime.Day())
 
 	// Gera a data no formato YYYY-MM-DD
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
+
+	datasetDir := filepath.Join("data", "datasets")
+	datasetFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".csv")
+
+	// Verifica se o arquivo de dataset já existe
+	if !clearFiles {
+		if _, err := os.Stat(datasetFilePath); err == nil {
+			log.Printf("✅ Arquivo de dataset já existe: %s", datasetFilePath)
+			return nil
+		}
+	}
 
 	// Verifica se os arquivos CSV existem para cada criptomoeda
 	for _, crypto := range cryptos {
@@ -54,7 +65,6 @@ func generateDatasetFile(currentTime time.Time, cryptos []string) error {
 	log.Printf("Todos os arquivos encontrados para a data: %s", dateStr)
 
 	// Cria diretório se não existir
-	datasetDir := filepath.Join("data", "datasets")
 	if _, err := os.Stat(datasetDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(datasetDir, 0755); err != nil {
 			log.Printf("Erro ao criar diretório %s: %v", datasetDir, err)
@@ -63,7 +73,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string) error {
 	}
 
 	// Cria ou abre o arquivo de dataset para escrita (append ou novo)
-	datasetFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".csv")
+
 	datasetFile, err := os.OpenFile(datasetFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Printf("Erro ao abrir ou criar o arquivo de dataset %s: %v", datasetFilePath, err)

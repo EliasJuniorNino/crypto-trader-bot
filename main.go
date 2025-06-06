@@ -23,6 +23,7 @@ func main() {
 	downloadBinance := flag.Bool("DownloadBinanceCryptoData", false, "Executa DownloadBinanceCryptoData")
 	getAllCryptos := flag.Bool("GetAllCryptos", false, "Busca todas as criptomoedas")
 	disableCryptosFlag := flag.Bool("DisableCryptos", false, "Executa DisableCryptos")
+	resetCurrentDataset := flag.Bool("ResetCurrentDataset", false, "Subistitui o dataset atual")
 	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
 	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
@@ -83,7 +84,7 @@ func main() {
 			fmt.Println("❌ Erro ao converter data final:", err)
 			return
 		}
-		generateDataset.Main(startDate, endDate)
+		generateDataset.Main(startDate, endDate, *resetCurrentDataset)
 		executouAlgum = true
 	}
 

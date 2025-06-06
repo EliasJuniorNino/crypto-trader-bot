@@ -35,9 +35,10 @@ func MainCMD() {
 		case "4":
 			fmt.Print("Buscar todas as criptomoedas? (s/n): ")
 			scanner.Scan()
-			isAllCryptosEnabled := strings.TrimSpace(scanner.Text())
+			input := strings.TrimSpace(scanner.Text())
+			isAllCryptosEnabled := input == "s" || input == "S"
 			fmt.Println("\n🔍 Executando DownloadBinanceCryptoData...")
-			getBinanceData.Main(isAllCryptosEnabled == "s" || isAllCryptosEnabled == "S")
+			getBinanceData.Main(isAllCryptosEnabled)
 		case "5":
 			fmt.Println("\n🔍 Executando DisableCryptos...")
 			minDate, maxDate := getDateRange()
@@ -55,7 +56,11 @@ func MainCMD() {
 				fmt.Println("❌ Erro ao converter data final:", err)
 				continue
 			}
-			generateDataset.Main(startDate, endDate)
+			fmt.Print("Limpar arquivos existentes? (s/n): ")
+			scanner.Scan()
+			input := strings.TrimSpace(scanner.Text())
+			clearFiles := input == "s" || input == "S"
+			generateDataset.Main(startDate, endDate, clearFiles)
 		default:
 			fmt.Println("\n❌ Opção inválida! Por favor, escolha uma opção válida.")
 		}
