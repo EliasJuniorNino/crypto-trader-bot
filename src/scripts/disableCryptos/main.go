@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -20,7 +22,7 @@ type crypto struct {
 }
 
 // Obter criptomoedas habilitadas
-func getEnabledCryptos() ([]crypto, error) {
+func getCryptos() ([]crypto, error) {
 	db, err := database.ConnectDatabase()
 	if err != nil {
 		return nil, err
@@ -32,8 +34,7 @@ func getEnabledCryptos() ([]crypto, error) {
 		FROM cryptos c
 		JOIN exchanges_cryptos ec ON c.id = ec.crypto_id
 		JOIN exchanges e ON ec.exchange_id = e.id
-		WHERE LOWER(e.name) LIKE '%binance%'
-		AND c.is_enabled = 1;
+		WHERE LOWER(e.name) LIKE '%binance%';
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar criptos: %w", err)
@@ -53,19 +54,35 @@ func getEnabledCryptos() ([]crypto, error) {
 }
 
 // Desativar criptomoeda no banco de dados
-func disableCrypto(cryptoID int) error {
+func disableCrypto(crypto string) error {
 	db, err := database.ConnectDatabase()
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE cryptos SET is_enabled = 0 WHERE id = ?", cryptoID)
+	_, err = db.Exec("UPDATE cryptos SET is_enabled = 0 WHERE symbol = ?", crypto)
 	if err != nil {
-		return fmt.Errorf("erro ao desativar crypto ID %d: %w", cryptoID, err)
+		return fmt.Errorf("erro ao desativar crypto ID %s: %w", crypto, err)
 	}
 
-	log.Printf("🚫 Criptomoeda ID %d desativada no banco de dados", cryptoID)
+	log.Printf("🚫 Criptomoeda ID %s desativada no banco de dados", crypto)
+	return nil
+}
+
+func enableCrypto(crypto string) error {
+	db, err := database.ConnectDatabase()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec("UPDATE cryptos SET is_enabled = 1 WHERE symbol = ?", crypto)
+	if err != nil {
+		return fmt.Errorf("erro ao ativar crypto %s: %w", crypto, err)
+	}
+
+	log.Printf("✅ Criptomoeda %s ativada no banco de dados", crypto)
 	return nil
 }
 
@@ -84,8 +101,18 @@ func checkCryptoAvailability(symbol, interval, date string) bool {
 	baseURL := "https://data.binance.vision/data/spot/daily/klines"
 	monthStr := fmt.Sprintf("%02d", month)
 	dayStr := fmt.Sprintf("%02d", day)
-	fileName := fmt.Sprintf("%s-%s-%d-%s-%s.zip", symbol, interval, year, monthStr, dayStr)
-	url := fmt.Sprintf("%s/%s/%s/%s", baseURL, symbol, interval, fileName)
+	fileName := fmt.Sprintf("%s-%s-%d-%s-%s", symbol, interval, year, monthStr, dayStr)
+	url := fmt.Sprintf("%s/%s/%s/%s.zip", baseURL, symbol, interval, fileName)
+
+	csvDir := filepath.Join("data", "binance_data", symbol, interval, "csv")
+	csvFilePath := filepath.Join(csvDir, fileName+".csv")
+
+	// Verificar se o arquivo CSV já existe
+	if _, err := os.Stat(csvFilePath); err == nil {
+		return true
+	} else {
+		log.Printf("⚠️ Arquivo não encontrado %s", csvFilePath)
+	}
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -122,7 +149,7 @@ func Main(minDate, maxDate string) {
 	log.Printf("📅 Período: %s até %s", minDate, maxDate)
 
 	// Obter criptos habilitadas
-	cryptos, err := getEnabledCryptos()
+	cryptos, err := getCryptos()
 	if err != nil {
 		log.Printf("❌ Erro ao obter criptos: %v", err)
 		return
@@ -135,9 +162,16 @@ func Main(minDate, maxDate string) {
 
 	log.Printf("📊 Total de criptomoedas a verificar: %d", len(cryptos))
 
+	disabledCryptos := make(map[string]bool)
 	// Verificar cada crypto nas duas datas
 	for index, crypto := range cryptos {
 		symbol := fmt.Sprintf("%sUSDT", crypto.Symbol)
+
+		if disabledCryptos[symbol] {
+			log.Printf("👉 (%d/%d) Crypto já desativada, ignorando %s (ID: %d)", index+1, len(cryptos), symbol, crypto.ID)
+			continue
+		}
+
 		log.Printf("👉 (%d/%d) Verificando %s (ID: %d)", index+1, len(cryptos), symbol, crypto.ID)
 
 		// Verificar disponibilidade na data mínima
@@ -149,11 +183,47 @@ func Main(minDate, maxDate string) {
 		// Se retornou 404 em ambas as datas, desativar a crypto
 		if !availableMinDate || !availableMaxDate {
 			log.Printf("🚫 %s indisponível em uma das datas. Desativando...", symbol)
-			if err := disableCrypto(crypto.ID); err != nil {
+			if err := disableCrypto(crypto.Symbol); err != nil {
 				log.Printf("❌ Erro ao desativar %s: %v", symbol, err)
 			}
+			disabledCryptos[symbol] = true
+			log.Printf("☐ %s desativada", symbol)
+			continue
 		} else {
 			log.Printf("✅ %s está disponível em pelo menos uma das datas", symbol)
+		}
+
+		initialDate, err := time.Parse("2006-01-02", minDate)
+		if err != nil {
+			log.Printf("❌ Erro ao ler data %s: %v", minDate, err)
+			return
+		}
+
+		endDate, err := time.Parse("2006-01-02", maxDate)
+		if err != nil {
+			log.Printf("❌ Erro ao ler data %s: %v", maxDate, err)
+			return
+		}
+
+		for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
+			currentDateStr := i.Format("2006-01-02")
+			isAvailable := checkCryptoAvailability(symbol, "1m", currentDateStr)
+			if !isAvailable {
+				if err := disableCrypto(crypto.Symbol); err != nil {
+					log.Printf("❌ Erro ao desativar %s: %v", symbol, err)
+				}
+				disabledCryptos[symbol] = true
+				log.Printf("☐ %s desativada", symbol)
+				break
+			}
+		}
+
+		if !disabledCryptos[symbol] {
+			if err := enableCrypto(crypto.Symbol); err != nil {
+				log.Printf("❌ Erro ao ativar %s: %v", symbol, err)
+			} else {
+				log.Printf("✅ %s ativada", symbol)
+			}
 		}
 
 		// Aguardar um pouco entre as requisições para não sobrecarregar a API

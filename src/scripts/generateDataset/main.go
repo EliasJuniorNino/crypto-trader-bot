@@ -35,8 +35,31 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 
 	isHeaderAdded := false
 	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
-		generateDatasetFile(i, cryptos, clearFiles)
-		mergeDatasetFile(i, &isHeaderAdded)
+		yearStr := fixedCases(i.Year())
+		monthStr := fixedCases(int(i.Month()))
+		dayStr := fixedCases(i.Day())
+
+		// Gera a data no formato YYYY-MM-DD
+		dateStr := yearStr + "-" + monthStr + "-" + dayStr
+
+		fear_api_alternative_me, err := getFearIndex(db, dateStr, "api.alternative.me")
+		if err != nil {
+			log.Printf("Fear index de alternative.me não encontrado para: %s", dateStr)
+			return
+		}
+
+		fear_coinmarketcap, err := getFearIndex(db, dateStr, "CoinMarketCap")
+		if err != nil {
+			log.Printf("Fear index de coinmarketcap não encontrado para: %s", dateStr)
+			return
+		}
+
+		if err := generateDatasetFile(i, cryptos, clearFiles, fear_api_alternative_me, fear_coinmarketcap); err != nil {
+			return
+		}
+		if err := mergeDatasetFile(i, &isHeaderAdded); err != nil {
+			return
+		}
 	}
 }
 
@@ -95,7 +118,7 @@ func mergeDatasetFile(currentTime time.Time, isHeaderAdded *bool) error {
 	return writer.Flush()
 }
 
-func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles bool) error {
+func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles bool, fear_api_alternative_me string, fear_coinmarketcap string) error {
 	yearStr := fixedCases(currentTime.Year())
 	monthStr := fixedCases(int(currentTime.Month()))
 	dayStr := fixedCases(currentTime.Day())
@@ -160,7 +183,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	}
 
 	// Cria o cabeçalho do dataset
-	datasetHeader := []string{"OpenTime"}
+	datasetHeader := []string{"OpenTime", "fear_api_alternative_me", "fear_coinmarketcap"}
 
 	// Adiciona coluna no cabeçalho para cada criptomoeda
 	for _, crypto := range cryptos {
@@ -171,12 +194,10 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 			crypto+"Low",
 			crypto+"Close",
 			crypto+"Volume",
-			crypto+"CloseTime",
 			crypto+"QuoteAssetVolume",
 			crypto+"NumberOfTrades",
 			crypto+"TakerBuyBaseVolume",
 			crypto+"TakerBuyQuoteVolume",
-			crypto+"Ignore",
 		)
 	}
 
@@ -189,7 +210,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 
 	// Lê cada arquivo CSV e extrai as linhas necessárias
 	for lineNumber := 0; lineNumber < 1440; lineNumber++ {
-		datasetLine := []string{}
+		datasetLine := []string{fear_api_alternative_me, fear_coinmarketcap}
 
 		var openTime int64 = 0
 		for _, crypto := range cryptos {
@@ -213,12 +234,10 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 				kline.Low,
 				kline.Close,
 				kline.Volume,
-				strconv.FormatInt(kline.CloseTime, 10),
 				kline.QuoteAssetVolume,
 				strconv.Itoa(kline.NumberOfTrades),
 				kline.TakerBuyBaseVolume,
 				kline.TakerBuyQuoteVolume,
-				kline.Ignore,
 			)
 		}
 
@@ -243,6 +262,20 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	return nil
 }
 
+func getFearIndex(db *sql.DB, dateStr string, sourceStr string) (string, error) {
+	query := `
+        SELECT value
+        FROM fear_index
+        WHERE date LIKE ? AND source = ?;
+    `
+	var fearIndex float64
+	err := db.QueryRow(query, "%"+dateStr+"%", sourceStr).Scan(&fearIndex)
+	if err != nil {
+		return "0", err
+	}
+	return fmt.Sprintf("%v", fearIndex), nil
+}
+
 func getFileLine(filePath string, lineNumber int) (*models.BinanceKline, error) {
 	// Abre arquivo CSV para leitura
 	file, err := os.Open(filePath)
@@ -258,6 +291,7 @@ func getFileLine(filePath string, lineNumber int) (*models.BinanceKline, error) 
 	for currentLineNumber < lineNumber && scanner.Scan() {
 		currentLineNumber++
 	}
+
 	// Agora o scanner está posicionado na linha desejada (ou no final do arquivo)
 	if scanner.Scan() {
 		line := scanner.Text()

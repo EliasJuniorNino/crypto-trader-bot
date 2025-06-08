@@ -11,9 +11,9 @@ if initial_df.empty:
     raise ValueError("Dataset está vazio.")
 
 # Preprocessing (limpeza e preparação)
-initial_df.dropna(axis=1, inplace=True)
+initial_df.dropna(axis=1, inplace=False)
 initial_df = initial_df.loc[:, ~(initial_df == 0).any()]
-initial_df.drop_duplicates(inplace=True)
+initial_df.drop_duplicates(inplace=False)
 initial_df.to_csv("data/dataset_clean.csv")
 
 # Seleção de features e targets
@@ -29,10 +29,13 @@ df['semana'] = df['data'].dt.isocalendar().week.astype(int)
 df['fim_de_semana'] = df['dia_da_semana'].isin([5, 6]).astype(int)
 
 required_cols = ['fear_api_alternative_me', 'fear_coinmarketcap']
-features = ['dia_do_ano', 'dia_da_semana', 'semana', 'fim_de_semana'] + required_cols
+features = [
+    'dia_do_ano', 'dia_da_semana', 'semana', 'fim_de_semana'
+] + required_cols
 X = df[features]
 
-target_columns = [col for col in df.columns if col.endswith('_min_value') or col.endswith('_max_value')]
+target_columns = [col for col in df.columns if col.endswith(
+    '_min_value') or col.endswith('_max_value')]
 y = df[target_columns]
 
 # Normalização
@@ -40,7 +43,8 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # Divisão treino/teste
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, random_state=42)
 
 # Construção do modelo TensorFlow
 model = tf.keras.Sequential([
