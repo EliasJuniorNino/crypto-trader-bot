@@ -24,7 +24,9 @@
 				"golang.go",
 				"shivamkumar.go-extras",
 				"ms-vscode.makefile-tools",
-				"mechatroner.rainbow-csv"
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ReprEng.csv"
 			],
 			"settings": {
 				"editor.formatOnSave": true

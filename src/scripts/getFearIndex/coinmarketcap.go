@@ -52,7 +52,7 @@ func GetFearCoinmarketcap() {
 		return
 	}
 
-	data, err := fetchFearData(apiKey, 30)
+	data, err := fetchFearData(apiKey, 500, 1)
 	if err != nil {
 		fmt.Printf("Erro ao buscar dados da API: %v\n", err)
 		return
@@ -89,7 +89,7 @@ func GetFearCoinmarketcap() {
 	fmt.Printf("%d registros inseridos com sucesso!\n", inserted)
 }
 
-func fetchFearData(apiKey string, limit int) ([]fearData, error) {
+func fetchFearData(apiKey string, limit int, start int) ([]fearData, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", constants.COINMARKETCAP_FEAR_HISTORICAL_API, nil)
 	if err != nil {
@@ -100,6 +100,7 @@ func fetchFearData(apiKey string, limit int) ([]fearData, error) {
 
 	q := req.URL.Query()
 	q.Add("limit", fmt.Sprintf("%d", limit))
+	q.Add("start", fmt.Sprintf("%d", start))
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := client.Do(req)
