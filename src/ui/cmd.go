@@ -3,6 +3,7 @@ package ui
 import (
 	"app/src/scripts/disableCryptos"
 	"app/src/scripts/generateDataset"
+	"app/src/scripts/generateModels"
 	"app/src/scripts/getBinanceData"
 	"app/src/scripts/getDailyPrices"
 	"app/src/scripts/getFearIndex"
@@ -61,6 +62,9 @@ func MainCMD() {
 			input := strings.TrimSpace(scanner.Text())
 			clearFiles := input == "s" || input == "S"
 			generateDataset.Main(startDate, endDate, clearFiles)
+		case "7":
+			fmt.Println("\n🔍 Executando GenerateModels...")
+			generateModels.Main()
 		default:
 			fmt.Println("\n❌ Opção inválida! Por favor, escolha uma opção válida.")
 		}
@@ -79,6 +83,7 @@ func showMenu() {
 	fmt.Println("4. 📦 DownloadBinanceCryptoData")
 	fmt.Println("5. 🔄 DisableCryptos")
 	fmt.Println("6. 📊 GenerateDataset")
+	fmt.Println("7. 📊 GenerateModels")
 	fmt.Println(strings.Repeat("=", 40))
 	fmt.Print("Escolha uma opção: ")
 }

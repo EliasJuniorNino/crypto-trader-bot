@@ -3,6 +3,7 @@ package main
 import (
 	"app/src/scripts/disableCryptos"
 	"app/src/scripts/generateDataset"
+	"app/src/scripts/generateModels"
 	"app/src/scripts/getBinanceData"
 	"app/src/scripts/getDailyPrices"
 	"app/src/scripts/getFearIndex"
@@ -25,6 +26,7 @@ func main() {
 	disableCryptosFlag := flag.Bool("DisableCryptos", false, "Executa DisableCryptos")
 	resetCurrentDataset := flag.Bool("ResetCurrentDataset", false, "Subistitui o dataset atual")
 	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
+	generateModelsFlag := flag.Bool("GenerateModels", false, "Executa GenerateModels")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
 	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
 
@@ -85,6 +87,11 @@ func main() {
 			return
 		}
 		generateDataset.Main(startDate, endDate, *resetCurrentDataset)
+		executouAlgum = true
+	}
+
+	if *generateModelsFlag {
+		generateModels.Main()
 		executouAlgum = true
 	}
 

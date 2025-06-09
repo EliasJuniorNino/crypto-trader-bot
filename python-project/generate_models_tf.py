@@ -47,7 +47,8 @@ for coin in coins:
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     # Treinamento do modelo
-    model.fit(X_train, y_train, epochs=100, batch_size=1440*4, verbose=1)
+    model.fit(X_train, y_train, epochs=100,
+              batch_size=X_train.shape[0], verbose=1)
     model.save(f"data/models/{coin}.keras")
 
     # Predição
@@ -60,4 +61,4 @@ for coin in coins:
     # Avaliação
     mse = mean_squared_error(y_test_original, y_pred)
     with open(f"data/models/{coin}.txt", "w") as f:
-        f.write(f"{mse:.4f}\n")
+        f.write(f"{mse:.30f}\n")
