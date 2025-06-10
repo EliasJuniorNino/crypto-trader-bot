@@ -25,8 +25,12 @@ func MainCMD() {
 			fmt.Println("\n👋 Saindo do programa...")
 			os.Exit(0)
 		case "1":
+			fmt.Print("Buscar de todo periodo? (s/n): ")
+			scanner.Scan()
+			input := strings.TrimSpace(scanner.Text())
+			searchForAll := input == "s" || input == "S"
 			fmt.Println("\n🔍 Executando GetFearCoinmarketcap...")
-			getFearIndex.GetFearCoinmarketcap()
+			getFearIndex.GetFearCoinmarketcap(searchForAll)
 		case "2":
 			fmt.Println("\n🔍 Executando GetFearAlternativeMe...")
 			getFearIndex.GetFearAlternativeMe()

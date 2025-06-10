@@ -28,11 +28,7 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 		panic(err)
 	}
 
-	if err := clearFinalDataset(); err != nil {
-		log.Printf("Erro ao limpar o arquivo de dataset dataset_full.csv: %v", err)
-		return
-	}
-
+	isFullDatasetClear := false
 	isHeaderAdded := false
 	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
 		yearStr := fixedCases(i.Year())
@@ -57,6 +53,15 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 		if err := generateDatasetFile(i, cryptos, clearFiles, fear_api_alternative_me, fear_coinmarketcap); err != nil {
 			return
 		}
+
+		if !isFullDatasetClear {
+			if err := clearFinalDataset(); err != nil {
+				log.Printf("Erro ao limpar o arquivo de dataset dataset_full.csv: %v", err)
+				return
+			}
+			isFullDatasetClear = true
+		}
+
 		if err := mergeDatasetFile(i, &isHeaderAdded); err != nil {
 			return
 		}

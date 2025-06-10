@@ -24,7 +24,7 @@ type fearData struct {
 	Value     float64 `json:"value"`
 }
 
-func GetFearCoinmarketcap() {
+func GetFearCoinmarketcap(isSearchForAllFlg bool) {
 	fmt.Println("=== Importador de Fear & Greed Index ===")
 
 	err := godotenv.Load()
@@ -52,41 +52,50 @@ func GetFearCoinmarketcap() {
 		return
 	}
 
-	data, err := fetchFearData(apiKey, 500, 1)
-	if err != nil {
-		fmt.Printf("Erro ao buscar dados da API: %v\n", err)
-		return
-	}
-
-	inserted := 0
-	for _, item := range data {
-		timestamp, err := strconv.ParseInt(item.Timestamp, 10, 64)
+	allInserted := 0
+	limit := 50
+	start := 1
+	for {
+		data, err := fetchFearData(apiKey, limit, start)
 		if err != nil {
-			fmt.Printf("Erro ao converter: %v\n", err)
+			fmt.Printf("Erro ao buscar dados da API: %v\n", err)
 			return
 		}
 
-		date := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
+		inserted := 0
+		for _, item := range data {
+			timestamp, err := strconv.ParseInt(item.Timestamp, 10, 64)
+			if err != nil {
+				fmt.Printf("Erro ao converter: %v\n", err)
+				return
+			}
 
-		exists, err := recordExists(db, date)
-		if err != nil {
-			fmt.Printf("Erro ao verificar duplicidade: %v\n", err)
-			continue
-		}
-		if exists {
-			fmt.Printf("Registro %s já existe. Ignorando.\n", date)
-			continue
-		}
+			date := time.Unix(timestamp, 0).Format("2006-01-02 15:04:05")
 
-		err = insertRecord(db, "CoinMarketCap", nil, date, item.Value)
-		if err != nil {
-			fmt.Printf("Erro ao inserir registro: %v\n", err)
-			continue
+			exists, err := recordExists(db, date)
+			if err != nil {
+				fmt.Printf("Erro ao verificar duplicidade: %v\n", err)
+				continue
+			}
+			if exists {
+				fmt.Printf("Registro %s já existe. Ignorando.\n", date)
+				continue
+			}
+
+			err = insertRecord(db, "CoinMarketCap", nil, date, item.Value)
+			if err != nil {
+				fmt.Printf("Erro ao inserir registro: %v\n", err)
+				continue
+			}
+			inserted++
 		}
-		inserted++
+		allInserted += inserted
+		if len(data) == 0 || !isSearchForAllFlg {
+			break
+		}
+		start += limit
 	}
-
-	fmt.Printf("%d registros inseridos com sucesso!\n", inserted)
+	fmt.Printf("%d registros inseridos com sucesso!\n", allInserted)
 }
 
 func fetchFearData(apiKey string, limit int, start int) ([]fearData, error) {

@@ -27,6 +27,7 @@ func main() {
 	resetCurrentDataset := flag.Bool("ResetCurrentDataset", false, "Subistitui o dataset atual")
 	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
 	generateModelsFlag := flag.Bool("GenerateModels", false, "Executa GenerateModels")
+	isSearchForAllFlg := flag.Bool("All", false, "Busca todos")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
 	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
 
@@ -48,7 +49,7 @@ func main() {
 
 	if *fearCMC {
 		fmt.Println("🔍 Executando GetFearCoinmarketcap...")
-		getFearIndex.GetFearCoinmarketcap()
+		getFearIndex.GetFearCoinmarketcap(*isSearchForAllFlg)
 		executouAlgum = true
 	}
 
