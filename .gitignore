@@ -7,9 +7,7 @@ env.py
 node_modules
 .venv/
 .build/
-node_modules
 yarn.lock
-.env
 .venv
 venv
 .idea
@@ -21,6 +19,9 @@ venv
 *.h5
 *.keras
 *.pkl
+
+.vscode/**
+!.vscode/launch.json
 
 # Go build artifacts
 *.exe
@@ -42,4 +43,12 @@ vendor/
 *.swo
 *.swn
 *.bak
-*.tmp
+
+# CMake build artifacts
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+install_manifest.txt
+build/
