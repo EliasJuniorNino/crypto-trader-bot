@@ -1,0 +1,8 @@
+{
+    "build": {
+        "directoryFilters": [
+            "-model-generator",
+            "-_docs"
+        ]
+    }
+}

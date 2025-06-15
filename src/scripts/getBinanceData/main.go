@@ -346,8 +346,6 @@ func downloadAndExtractKlines(pairs []string, interval string, daysToProcess int
 				continue
 			}
 
-			log.Printf("✔️ Salvo: %s", zipPath)
-
 			// Extrair o ZIP
 			if err := extractZip(zipPath, csvDir); err != nil {
 				log.Printf("❌ Erro ao extrair %s: %v", zipPath, err)
@@ -355,6 +353,13 @@ func downloadAndExtractKlines(pairs []string, interval string, daysToProcess int
 			}
 
 			log.Printf("📦 Extraído para: %s", csvDir)
+
+			// Remover o arquivo ZIP após a extração
+			if err := os.Remove(zipPath); err != nil {
+				log.Printf("⚠️ Erro ao remover arquivo zip: %v", err)
+			} else {
+				log.Printf("🗑️ Arquivo zip removido: %s", zipPath)
+			}
 
 			// Aguardar um segundo antes de continuar
 			time.Sleep(1 * time.Second)
