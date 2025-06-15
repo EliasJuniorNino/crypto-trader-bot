@@ -178,7 +178,7 @@ docker compose --profile cuda up
 
 For detailed usage instructions, available parameters, execution examples, script structure, and more, check out the full project documentation:
 
-👉 **[📖 View Project Documentation](./docs/en/USAGE.md)**
+👉 **[📖 View Project Documentation](./_docs/en/USAGE.md)**
 
 > The `USAGE.md` file contains everything you need to use the bot properly, including how to train the model, configure input parameters, and run the system in different modes.
 

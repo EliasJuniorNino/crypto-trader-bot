@@ -1,0 +1,12 @@
+# Dependências principais
+pandas
+numpy
+joblib
+scikit-learn
+python-dotenv
+keras
+python-binance
+matplotlib
+requests
+tf-nightly
+jupyterlab
