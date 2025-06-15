@@ -5,7 +5,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 import os
 import joblib
+from dotenv import load_dotenv
 
+load_dotenv()
+
+DATA_PATH = os.getenv("DATA_DIR")
 # --- Função para criar janelas temporais (sequências) ---
 
 
@@ -19,9 +23,9 @@ def create_sequences(data_X, data_y, look_back=60):
 
 # --- Carregar dados ---
 try:
-    df = pd.read_csv("data/dataset_full.csv")
+    df = pd.read_csv(f"{DATA_PATH}/dataset_full.csv")
 except FileNotFoundError:
-    raise FileNotFoundError("Arquivo 'data/dataset_full.csv' não encontrado.")
+    raise FileNotFoundError(f"Arquivo {DATA_PATH}/data/dataset_full.csv, não encontrado.")
 
 if df.empty:
     raise ValueError("O dataset está vazio.")
@@ -48,21 +52,18 @@ required_fear_columns = ['fear_api_alternative_me', 'fear_coinmarketcap']
 missing_fear_columns = [
     col for col in required_fear_columns if col not in df.columns]
 if missing_fear_columns:
-    raise ValueError(
-        f"Colunas de medo não encontradas no dataset: {missing_fear_columns}")
+    raise ValueError(f"Colunas de medo não encontradas no dataset: {missing_fear_columns}")
 
 # --- Preparação ---
-os.makedirs("models/lstm", exist_ok=True)
+os.makedirs(f"{DATA_PATH}/models/lstm", exist_ok=True)
 
 # Encontrar colunas de preços
 price_columns = [col for col in df.columns if col.endswith(('High', 'Low'))]
 if not price_columns:
-    raise ValueError(
-        "Nenhuma coluna de preços (High/Low) encontrada no dataset.")
+    raise ValueError("Nenhuma coluna de preços (High/Low) encontrada no dataset.")
 
 # Extrair nomes das moedas
-coins = sorted(list(set(col.replace('High', '').replace('Low', '')
-               for col in price_columns)))
+coins = sorted(list(set(col.replace('High', '').replace('Low', '') for col in price_columns)))
 coins = [coin for coin in coins if coin]  # Remove strings vazias
 
 results = {}
@@ -79,19 +80,16 @@ for coin in coins[:10]:
     target_cols = [f"{coin}High", f"{coin}Low"]
     missing_target_cols = [col for col in target_cols if col not in df.columns]
     if missing_target_cols:
-        print(
-            f"Aviso: Colunas {missing_target_cols} não encontradas. Pulando {coin}.")
+        print(f"Aviso: Colunas {missing_target_cols} não encontradas. Pulando {coin}.")
         continue
 
     # --- Features de entrada: todas as colunas High/Low + indicadores de medo ---
-    input_cols = [col for col in df.columns if col.endswith(
-        'High') or col.endswith('Low') or '_percent' in col]
+    input_cols = [col for col in df.columns if col.endswith('High') or col.endswith('Low') or '_percent' in col]
     input_cols.extend(required_fear_columns)
 
     # Verificar se há dados suficientes
     if len(df) < LOOK_BACK + 1:
-        print(
-            f"Dados insuficientes (menos que {LOOK_BACK + 1} registros). Pulando {coin}.")
+        print(f"Dados insuficientes (menos que {LOOK_BACK + 1} registros). Pulando {coin}.")
         continue
 
     # Verificar valores NaN e tratar
@@ -123,8 +121,7 @@ for coin in coins[:10]:
     X_test_seq, y_test_seq = create_sequences(X_test, y_test, LOOK_BACK)
 
     if X_train_seq.shape[0] == 0 or X_test_seq.shape[0] == 0:
-        print(
-            f"Dados insuficientes para criar sequências para {coin}. Pulando.")
+        print(f"Dados insuficientes para criar sequências para {coin}. Pulando.")
         continue
 
     print(f"Formato de X_train: {X_train_seq.shape}")
@@ -165,12 +162,12 @@ for coin in coins[:10]:
         print("Treinamento concluído.")
 
         # Salvar modelo
-        model_path = f"models/lstm/{coin}.keras"
+        model_path = f"{DATA_PATH}/models/lstm/{coin}.keras"
         model.save(model_path)
 
         # Salvar scalers
-        joblib.dump(X_scaler, f"models/lstm/{coin}_x_scaler.save")
-        joblib.dump(y_scaler, f"models/lstm/{coin}_y_scaler.save")
+        joblib.dump(X_scaler, f"{DATA_PATH}/models/lstm/{coin}_x_scaler.save")
+        joblib.dump(y_scaler, f"{DATA_PATH}/models/lstm/{coin}_y_scaler.save")
 
         # --- Avaliar ---
         y_pred_scaled = model.predict(X_test_seq, verbose=0)
@@ -186,7 +183,7 @@ for coin in coins[:10]:
             'Metric': ['MSE'],
             'Value': [mse]
         })
-        coin_result_df.to_csv(f"models/lstm/{coin}_mse.csv", index=False)
+        coin_result_df.to_csv(f"{DATA_PATH}/models/lstm/{coin}_mse.csv", index=False)
 
     except Exception as e:
         print(f"Erro durante o treinamento para {coin}: {str(e)}")
@@ -195,10 +192,9 @@ for coin in coins[:10]:
 # --- Salvar resumo geral ---
 if results:
     results_df = pd.DataFrame(list(results.items()), columns=['Coin', 'MSE'])
-    results_df.to_csv(
-        "models/lstm/lstm_model_evaluation_mse.csv", index=False)
+    results_df.to_csv(f"{DATA_PATH}/models/lstm/lstm_model_evaluation_mse.csv", index=False)
     print(f"\nResumo dos resultados:")
     print(results_df)
-    print("\nTodos os MSEs salvos em 'data/lstm_model_evaluation_mse.csv'")
+    print(f"\nTodos os MSEs salvos em {DATA_PATH}/lstm_model_evaluation_mse.csv'")
 else:
     print("Nenhum modelo foi treinado com sucesso.")

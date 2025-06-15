@@ -5,10 +5,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 import os
 import joblib
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATA_PATH = os.getenv("DATA_DIR")
 
 # --- Função para criar janelas temporais (sequências) ---
-
-data_path = os.getenv("DATA_DIR")
 
 def create_sequences(data_X, data_y, look_back=60):
     X, y = [], []
@@ -20,7 +23,7 @@ def create_sequences(data_X, data_y, look_back=60):
 
 # --- Carregar dados ---
 try:
-    df = pd.read_csv(f"{data_path}/data/dataset_full.csv")
+    df = pd.read_csv(f"{DATA_PATH}/datasets/dataset_full.csv")
 except FileNotFoundError:
     raise FileNotFoundError("Arquivo 'data/dataset_full.csv' não encontrado.")
 
@@ -36,7 +39,7 @@ if 'fear_coinmarketcap' not in df.columns:
         "Coluna 'fear_api_alternative_me' não encontrada no dataset.")
 
 # --- Preparação ---
-os.makedirs(f"{data_path}/models/lstm", exist_ok=True)
+os.makedirs(f"{DATA_PATH}/models/lstm", exist_ok=True)
 
 price_columns = [col for col in df.columns if col.endswith(('High', 'Low'))]
 coins = sorted(list(set(col.replace('High', '').replace('Low', '')
@@ -109,12 +112,12 @@ for coin in coins:
     print("Treinamento concluído.")
 
     # Salvar modelo
-    model_path = f"{data_path}/models/lstm/{coin}.keras"
+    model_path = f"{DATA_PATH}/models/lstm/{coin}.keras"
     model.save(model_path)
 
     # Salvar scaler
-    joblib.dump(X_scaler, f"{data_path}/models/lstm/{coin}_x_scaler.save")
-    joblib.dump(y_scaler, f"{data_path}/models/lstm/{coin}_y_scaler.save")
+    joblib.dump(X_scaler, f"{DATA_PATH}/models/lstm/{coin}_x_scaler.save")
+    joblib.dump(y_scaler, f"{DATA_PATH}/models/lstm/{coin}_y_scaler.save")
 
     # --- Avaliar ---
     y_pred_scaled = model.predict(X_test_seq)
@@ -130,9 +133,9 @@ for coin in coins:
         'Metric': ['MSE'],
         'Value': [mse]
     })
-    coin_result_df.to_csv(f"{data_path}/models/lstm/{coin}_mse.csv", index=False)
+    coin_result_df.to_csv(f"{DATA_PATH}/models/lstm/{coin}_mse.csv", index=False)
 
 # --- Salvar resumo geral ---
 results_df = pd.DataFrame(list(results.items()), columns=['Coin', 'MSE'])
-results_df.to_csv(f"{data_path}/models/lstm/lstm_model_evaluation_mse.csv", index=False)
+results_df.to_csv(f"{DATA_PATH}/models/lstm/lstm_model_evaluation_mse.csv", index=False)
 print("\nTodos os MSEs salvos em 'models/lstm/lstm_model_evaluation_mse.csv'")

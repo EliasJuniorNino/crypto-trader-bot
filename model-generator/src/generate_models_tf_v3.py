@@ -5,6 +5,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 import os
 import joblib
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATA_PATH = os.getenv("DATA_DIR")
 
 LOOK_BACK = 60
 REQUIRED_FEAR_COLUMNS = ['fear_api_alternative_me', 'fear_coinmarketcap']
@@ -18,8 +23,8 @@ def create_sequences(data_X, data_y, look_back=60):
     return np.array(X), np.array(y)
 
 
-def load_and_prepare_data(path):
-    df = pd.read_csv(path)
+def load_and_prepare_data():
+    df = pd.read_csv(f"{DATA_PATH}/dataset_full.csv")
     if df.empty:
         raise ValueError("O dataset está vazio.")
 
@@ -45,10 +50,8 @@ def load_and_prepare_data(path):
 
 
 def extract_coin_names(df):
-    price_columns = [
-        col for col in df.columns if col.endswith(('High', 'Low'))]
-    coins = sorted(list(set(col.replace('High', '').replace('Low', '')
-                   for col in price_columns)))
+    price_columns = [col for col in df.columns if col.endswith(('High', 'Low'))]
+    coins = sorted(list(set(col.replace('High', '').replace('Low', '') for col in price_columns)))
     return [c for c in coins if c]
 
 
@@ -60,8 +63,7 @@ def train_model_for_coin(df, coin):
         print(f"Colunas alvo ausentes para {coin}. Pulando.")
         return None, None
 
-    input_cols = [col for col in df.columns if col.endswith(
-        'High') or col.endswith('Low') or '_percent' in col]
+    input_cols = [col for col in df.columns if col.endswith('High') or col.endswith('Low') or '_percent' in col]
     input_cols.extend(REQUIRED_FEAR_COLUMNS)
 
     df_clean = df[input_cols + target_cols].dropna()
@@ -102,10 +104,8 @@ def train_model_for_coin(df, coin):
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
 
     callbacks = [
-        tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss', patience=5, restore_best_weights=True),
-        tf.keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss', factor=0.5, patience=3, min_lr=1e-7)
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
+        tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-7)
     ]
 
     history = model.fit(
@@ -117,14 +117,13 @@ def train_model_for_coin(df, coin):
         verbose=1
     )
 
-    model_dir = f"models/lstm"
+    model_dir = f"{DATA_PATH}/models/lstm"
     os.makedirs(model_dir, exist_ok=True)
 
     model.save(f"{model_dir}/{coin}.keras")
     joblib.dump(X_scaler, f"{model_dir}/{coin}_x_scaler.save")
     joblib.dump(y_scaler, f"{model_dir}/{coin}_y_scaler.save")
-    pd.DataFrame(history.history).to_csv(
-        f"{model_dir}/{coin}_history.csv", index=False)
+    pd.DataFrame(history.history).to_csv(f"{model_dir}/{coin}_history.csv", index=False)
 
     y_pred_scaled = model.predict(X_test_seq, verbose=0)
     y_pred = y_scaler.inverse_transform(y_pred_scaled)
@@ -139,7 +138,7 @@ def train_model_for_coin(df, coin):
 
 
 def main():
-    df = load_and_prepare_data("data/dataset_full.csv")
+    df = load_and_prepare_data()
     coins = extract_coin_names(df)
     print(f"Moedas encontradas: {coins}")
 
@@ -153,10 +152,8 @@ def main():
             print(f"Erro ao treinar {coin}: {e}")
 
     if results:
-        results_df = pd.DataFrame(
-            list(results.items()), columns=['Coin', 'MSE'])
-        results_df.to_csv(
-            "models/lstm/lstm_model_evaluation_mse.csv", index=False)
+        results_df = pd.DataFrame(list(results.items()), columns=['Coin', 'MSE'])
+        results_df.to_csv(f"{DATA_PATH}/models/lstm/lstm_model_evaluation_mse.csv", index=False)
         print("\nResumo dos resultados:")
         print(results_df)
     else:
