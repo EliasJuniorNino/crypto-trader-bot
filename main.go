@@ -79,6 +79,22 @@ func main() {
 		executouAlgum = true
 	}
 
+	if *disableCryptosFlag {
+		if *start == "" || *end == "" {
+			fmt.Println("❌ Para usar -DisableCryptos, forneça -start e -end no formato YYYY-MM-DD.")
+			return
+		}
+
+		if !isValidDate(*start) || !isValidDate(*end) || !isDateAfterOrEqual(*end, *start) {
+			fmt.Println("❌ Datas inválidas. Use o formato YYYY-MM-DD e certifique-se de que a data final seja igual ou posterior à inicial.")
+			return
+		}
+
+		fmt.Printf("🔄 Executando DisableCryptos de %s até %s...\n", *start, *end)
+		disableCryptos.Main(*start, *end)
+		executouAlgum = true
+	}
+
 	if *generateDatasetFlag {
 		fmt.Println("🔍 Executando GenerateDataset...")
 		if *start == "" || *end == "" {
@@ -101,22 +117,6 @@ func main() {
 
 	if *generateModelsFlag {
 		generateModels.Main()
-		executouAlgum = true
-	}
-
-	if *disableCryptosFlag {
-		if *start == "" || *end == "" {
-			fmt.Println("❌ Para usar -DisableCryptos, forneça -start e -end no formato YYYY-MM-DD.")
-			return
-		}
-
-		if !isValidDate(*start) || !isValidDate(*end) || !isDateAfterOrEqual(*end, *start) {
-			fmt.Println("❌ Datas inválidas. Use o formato YYYY-MM-DD e certifique-se de que a data final seja igual ou posterior à inicial.")
-			return
-		}
-
-		fmt.Printf("🔄 Executando DisableCryptos de %s até %s...\n", *start, *end)
-		disableCryptos.Main(*start, *end)
 		executouAlgum = true
 	}
 

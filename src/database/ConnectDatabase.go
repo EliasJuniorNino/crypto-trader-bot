@@ -7,9 +7,10 @@ import (
 )
 
 func ConnectDatabase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", os.Getenv("DATA_DIR")+"/database.db")
+	db_url := os.Getenv("DATA_DIR") + "/database.db"
+	db, err := sql.Open("sqlite3", db_url)
 	if err != nil {
-		log.Fatalf("Erro ao abrir o banco de dados: %v", err)
+		log.Fatalf("Erro ao abrir o banco de dados: %s, %v", db_url, err)
 	}
 	return db, err
 }

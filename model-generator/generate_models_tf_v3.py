@@ -35,7 +35,7 @@ def load_and_prepare_data():
         if not col.endswith('Close'):
             continue
         coin = col.replace('Close', '')
-        for i in range(1, 5):
+        for i in range(1, 3):
             prev = df[col].shift(i)
             new_col = ((df[col] - prev) / prev.replace(0, np.nan)) * 100
             percent_cols.append(new_col.rename(f'{coin}T{i}_percent'))
@@ -58,12 +58,12 @@ def extract_coin_names(df):
 def train_model_for_coin(df, coin):
     print(f"\n--- Treinando modelo para {coin} ---")
 
-    target_cols = [f"{coin}High", f"{coin}Low"]
+    target_cols = [f"{coin}High", f"{coin}Low", f"{coin}Close"]
     if any(col not in df.columns for col in target_cols):
         print(f"Colunas alvo ausentes para {coin}. Pulando.")
         return None, None
 
-    input_cols = [col for col in df.columns if col.endswith('High') or col.endswith('Low') or '_percent' in col]
+    input_cols = [col for col in df.columns if col.endswith('High') or col.endswith('Low') or col.endswith('Close') or '_percent' in col]
     input_cols.extend(REQUIRED_FEAR_COLUMNS)
 
     df_clean = df[input_cols + target_cols].dropna()
@@ -153,7 +153,7 @@ def main():
 
     if results:
         results_df = pd.DataFrame(list(results.items()), columns=['Coin', 'MSE'])
-        results_df.to_csv(f"{DATA_PATH}/models/lstm/lstm_model_evaluation_mse.csv", index=False)
+        results_df.to_csv(f"{DATA_PATH}/results/lstm/lstm_model_evaluation_mse.csv", index=False)
         print("\nResumo dos resultados:")
         print(results_df)
     else:

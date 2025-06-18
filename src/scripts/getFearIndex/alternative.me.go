@@ -2,12 +2,14 @@ package getFearIndex
 
 import (
 	"app/src/constants"
+	"app/src/database"
 	"app/src/dto"
 	"app/src/models"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,11 +26,10 @@ func GetFearAlternativeMe() {
 		fmt.Println("Aviso: não foi possível carregar .env, usando variáveis do ambiente.")
 	}
 
-	dbPath := "database/database.db"
-	db, err := sql.Open("sqlite3", dbPath)
+	// Conexão com o banco de dados
+	db, err := database.ConnectDatabase()
 	if err != nil {
-		fmt.Printf("Erro ao conectar ao SQLite: %v\n", err)
-		return
+		log.Fatalf("Erro ao abrir o banco de dados: %v", err)
 	}
 	defer db.Close()
 
