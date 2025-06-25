@@ -9,8 +9,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,32 +30,44 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 		panic(err)
 	}
 
-	isFullDatasetClear := false
-	isHeaderAdded := false
+	// Gera dataset para cada dia entre a data inicial e a data final
+	var wg sync.WaitGroup
+	maxGoroutines := runtime.NumCPU() * 2
+	sem := make(chan struct{}, maxGoroutines)
 	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
 		yearStr := fixedCases(i.Year())
 		monthStr := fixedCases(int(i.Month()))
 		dayStr := fixedCases(i.Day())
 
 		// Gera a data no formato YYYY-MM-DD
-		dateStr := yearStr + "-" + monthStr + "-" + dayStr
+		wg.Add(1)
+		sem <- struct{}{} // bloquear aqui se já tiver maxGoroutines em execução
+		go func(index time.Time, dateStr string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			fear_api_alternative_me, err := getFearIndex(db, dateStr, "api.alternative.me")
+			if err != nil {
+				log.Printf("Fear index de alternative.me não encontrado para: %s", dateStr)
+				return
+			}
 
-		fear_api_alternative_me, err := getFearIndex(db, dateStr, "api.alternative.me")
-		if err != nil {
-			log.Printf("Fear index de alternative.me não encontrado para: %s", dateStr)
-			return
-		}
+			fear_coinmarketcap, err := getFearIndex(db, dateStr, "CoinMarketCap")
+			if err != nil {
+				log.Printf("Fear index de coinmarketcap não encontrado para: %s", dateStr)
+				return
+			}
 
-		fear_coinmarketcap, err := getFearIndex(db, dateStr, "CoinMarketCap")
-		if err != nil {
-			log.Printf("Fear index de coinmarketcap não encontrado para: %s", dateStr)
-			return
-		}
+			if err := generateDatasetFile(index, cryptos, clearFiles, fear_api_alternative_me, fear_coinmarketcap); err != nil {
+				return
+			}
+		}(i, yearStr+"-"+monthStr+"-"+dayStr)
+	}
+	wg.Wait()
 
-		if err := generateDatasetFile(i, cryptos, clearFiles, fear_api_alternative_me, fear_coinmarketcap); err != nil {
-			return
-		}
-
+	// Gera o arquivo final unificado entre a data inicial e a data final
+	isFullDatasetClear := false
+	isHeaderAdded := false
+	for i := initialDate; i.Before(time.Now().UTC()) && (i.Before(endDate) || i.Equal(endDate)); i = i.Add(24 * time.Hour) {
 		if !isFullDatasetClear {
 			if err := clearFinalDataset(); err != nil {
 				log.Printf("Erro ao limpar o arquivo de dataset dataset_full.csv: %v", err)
@@ -260,7 +274,6 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 				log.Printf("Erro ao escrever no arquivo de dataset: %v", err)
 				return err
 			}
-			log.Printf("Linha %d adicionada ao dataset para a data %s", lineNumber, dateStr)
 		}
 	}
 

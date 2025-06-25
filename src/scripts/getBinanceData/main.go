@@ -343,10 +343,12 @@ func downloadAndExtractKlineForSymbol(totalPairs int, symbol, interval string, y
 
 	// Verificar se o arquivo CSV já existe
 	if _, err := os.Stat(csvFilePath); err == nil {
+		*stopGorotines = false
 		return
 	}
 
 	if isOfflineLink(url) {
+		*stopGorotines = false
 		return
 	}
 
