@@ -3,7 +3,7 @@ import argparse
 from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import joblib
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -55,6 +55,11 @@ X_test, y_test = create_sequences_rf(test_data)
 model_rf = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
 model_rf.fit(X_train, y_train)
 
+# --- Salva o modelo ---
+model_dir = f"{DATA_DIR}/modelos/forest"
+os.makedirs(model_dir, exist_ok=True)
+joblib.dump(model_rf, f"{model_dir}/{COIN}_rf.pkl")
+
 # --- Previsões ---
 pred_rf_scaled = model_rf.predict(X_test)
 
@@ -68,21 +73,13 @@ pred_rf = inverse_transform(pred_rf_scaled, scaled_data)
 real = inverse_transform(y_test, scaled_data)
 
 # --- Métricas ---
-def calc_metrics(true, pred, name):
-    rmse = np.sqrt(mean_squared_error(true, pred))
-    mae = mean_absolute_error(true, pred)
-    print(f"{name} - RMSE: {rmse:.3f}, MAE: {mae:.3f}")
-    return rmse, mae
+rmse = np.sqrt(mean_squared_error(real, pred_rf))
+mae = mean_absolute_error(real, pred_rf)
 
-rmse_rf, mae_rf = calc_metrics(real, pred_rf, "Random Forest")
-
-# --- Gráfico ---
-plt.figure(figsize=(14,7))
-plt.plot(real, label='Preço Real', color='black')
-plt.plot(pred_rf, label='Random Forest Previsto', color='green')
-plt.title(f'Previsão de Preço - {COIN} com Random Forest')
-plt.xlabel('Tempo')
-plt.ylabel('Preço em USD')
-plt.legend()
-plt.tight_layout()
-plt.savefig("previsao_random_forest.png")
+# --- Salva métricas em CSV ---
+metrics_df = pd.DataFrame([{
+    'coin': COIN,
+    'rmse': round(rmse, 2),
+    'mae': round(mae, 2)
+}])
+metrics_df.to_csv(f"{model_dir}/{COIN}_metrics.csv", index=False)

@@ -76,7 +76,7 @@ func mergeDatasetFile(currentTime time.Time, isHeaderAdded *bool) error {
 	// Gera a data no formato YYYY-MM-DD
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
 
-	currentDatasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets")
+	currentDatasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets", dateStr)
 	currentDatasetFilePath := filepath.Join(currentDatasetDir, "dataset-"+dateStr+".csv")
 
 	finalDatasetDir := filepath.Join(os.Getenv("DATA_DIR"))
@@ -131,7 +131,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	// Gera a data no formato YYYY-MM-DD
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
 
-	datasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets")
+	datasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets", dateStr)
 	datasetTempFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".tmp")
 	datasetFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".csv")
 
