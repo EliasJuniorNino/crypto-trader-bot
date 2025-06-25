@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -177,21 +178,6 @@ func saveProgressData(lastProcessedDate, startedDate *time.Time) error {
 		}
 	}
 
-	// Se já existir uma data salva, comparar com a nova
-	if lastProcessedDate != nil && data.LastProcessedDate != "" {
-		// Parse da data salva
-		savedDate, err := time.Parse("2006-01-02", data.LastProcessedDate)
-		if err == nil {
-			// Só atualiza se a nova data for anterior à salva
-			if !lastProcessedDate.Before(savedDate) {
-				log.Printf("Data nova (%s) não é menor que a data salva (%s), não atualizando progresso", lastProcessedDate.Format("2006-01-02"), data.LastProcessedDate)
-				return nil
-			}
-		} else {
-			log.Printf("Erro ao fazer parse da data salva no progresso: %v", err)
-		}
-	}
-
 	// Atualizar dados
 	if lastProcessedDate != nil {
 		data.LastProcessedDate = lastProcessedDate.Format("2006-01-02")
@@ -222,8 +208,11 @@ func loadLastProcessedDate() time.Time {
 		file, err := os.ReadFile(prrogressFile)
 		if err == nil {
 			var data Progress
+			log.Printf("📂 Lendo arquivo de progresso: %s", prrogressFile)
+			log.Printf("📂 Config encontrada: %s", data)
 			if err := json.Unmarshal(file, &data); err == nil && data.LastProcessedDate != "" {
 				if date, err := time.Parse("2006-01-02", data.LastProcessedDate); err == nil {
+					log.Printf("📅 Última data processada encontrada: %s", date.Format("2006-01-02"))
 					return date
 				}
 			}
@@ -231,6 +220,7 @@ func loadLastProcessedDate() time.Time {
 	}
 
 	// Se não houver arquivo de progresso ou ocorrer erro, retorne a data atual menos um dia
+	log.Println("📅 Nenhuma data processada encontrada, usando data atual menos um dia.")
 	return time.Now().AddDate(0, 0, -1)
 }
 
@@ -281,128 +271,143 @@ func downloadAndExtractKlines(pairs []string, interval string, daysToProcess int
 	// Contador de dias processados
 	daysProcessed := 0
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
 	// Processar enquanto não atingir o limite de dias ou a data mínima
 	for (daysToProcess == 0 || daysProcessed < daysToProcess) && !currentDate.Before(minDateTime) {
-		wg.Add(1) // Adiciona uma goroutine ao WaitGroup
-		go downloadKlineForDate(currentDate, &wg, pairs, interval, saveDir, &mu)
+		year := currentDate.Year()
+		month := currentDate.Month()
+		day := currentDate.Day()
+
+		stopGoroutines := false
+		totalPairs := len(pairs)
+
+		if stopGoroutines {
+			for _, symbol := range pairs {
+				downloadAndExtractKlineForSymbol(totalPairs, symbol, interval, year, month, day, saveDir, &stopGoroutines, nil)
+			}
+		} else {
+			var wg sync.WaitGroup
+			var mu sync.Mutex
+
+			maxGoroutines := runtime.NumCPU() * 2
+			sem := make(chan struct{}, maxGoroutines)
+
+			for _, symbol := range pairs {
+				wg.Add(1)
+				sem <- struct{}{} // bloquear aqui se já tiver maxGoroutines em execução
+				go func(symbol string) {
+					defer wg.Done()
+					defer func() { <-sem }()
+					downloadAndExtractKlineForSymbol(totalPairs, symbol, interval, year, month, day, saveDir, &stopGoroutines, &mu)
+				}(symbol)
+			}
+			wg.Wait()
+		}
+
+		// Salvar o progresso atual antes de ir para o próximo dia
+		if err := saveProgressData(&currentDate, nil); err != nil {
+			log.Printf("Erro ao salvar progresso: %v", err)
+		}
+
 		// Ir para o dia anterior
 		currentDate = currentDate.AddDate(0, 0, -1)
 		daysProcessed++
-	}
 
-	wg.Wait()
+		// Log de progresso
+		log.Printf("📅 Processado dia: %s (%d dias)", currentDate.Format("2006-01-02"), daysProcessed)
+	}
 
 	return nil
 }
 
-func downloadKlineForDate(currentDate time.Time, wg *sync.WaitGroup, pairs []string, interval string, saveDir string, mu *sync.Mutex) {
-	defer wg.Done() // Marca a goroutine como concluída
+func downloadAndExtractKlineForSymbol(totalPairs int, symbol, interval string, year int, month time.Month, day int, saveDir string, stopGorotines *bool, mu *sync.Mutex) {
+	baseURL := "https://data.binance.vision/data/spot/daily/klines"
+	zipDir := filepath.Join(saveDir+"/data.binance.vision/data/spot/daily/klines", symbol, interval, "zip")
+	csvDir := filepath.Join(saveDir+"/data.binance.vision/data/spot/daily/klines", symbol, interval, "csv")
 
-	year := currentDate.Year()
-	month := currentDate.Month()
-	day := currentDate.Day()
-
-	for index, symbol := range pairs {
-		fmt.Println()
-		log.Printf("👉 %s(%d/%d)", symbol, index+1, len(pairs))
-
-		baseURL := "https://data.binance.vision/data/spot/daily/klines"
-		zipDir := filepath.Join(saveDir+"/data.binance.vision/data/spot/daily/klines", symbol, interval, "zip")
-		csvDir := filepath.Join(saveDir+"/data.binance.vision/data/spot/daily/klines", symbol, interval, "csv")
-
-		// Criar diretórios se não existirem
-		if err := os.MkdirAll(zipDir, 0755); err != nil {
-			log.Printf("Erro ao criar diretório zip: %v", err)
-			continue
-		}
-		if err := os.MkdirAll(csvDir, 0755); err != nil {
-			log.Printf("Erro ao criar diretório csv: %v", err)
-			continue
-		}
-
-		monthStr := fmt.Sprintf("%02d", month)
-		dayStr := fmt.Sprintf("%02d", day)
-		fileName := fmt.Sprintf("%s-%s-%d-%s-%s.zip", symbol, interval, year, monthStr, dayStr)
-		url := fmt.Sprintf("%s/%s/%s/%s", baseURL, symbol, interval, fileName)
-		zipPath := filepath.Join(zipDir, fileName)
-		csvFilePath := filepath.Join(csvDir, fileName[:len(fileName)-4]+".csv")
-
-		// Verificar se o arquivo CSV já existe
-		if _, err := os.Stat(csvFilePath); err == nil {
-			log.Printf("✅ Já extraído: %s", fileName)
-			continue
-		}
-
-		if isOfflineLink(url) {
-			log.Printf("❌ Link offline: %s", url)
-			continue
-		}
-
-		log.Printf("⬇️ Baixando: %s", url)
-
-		// Fazer o download do arquivo
-		client := &http.Client{
-			Timeout: 10 * time.Second,
-		}
-
-		mu.Lock() // Bloqueia: só uma goroutine entra aqui por vez
-		resp, err := client.Get(url)
-		time.Sleep(1 * time.Second) // Faz uma requisição a cada segundo, idependente da coroutine
-		mu.Unlock()                 // Libera o bloqueio
-		if err != nil {
-			log.Printf("⚠️ Erro ao baixar %s: %v", fileName, err)
-			insertOfflineLink(url)
-			continue
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			log.Printf("❌ Arquivo não encontrado: %s (status %d)", fileName, resp.StatusCode)
-			resp.Body.Close()
-			insertOfflineLink(url)
-			continue
-		}
-
-		// Criar arquivo zip
-		zipFile, err := os.Create(zipPath)
-		if err != nil {
-			log.Printf("❌ Erro ao criar arquivo zip: %v", err)
-			resp.Body.Close()
-			continue
-		}
-
-		// Copiar conteúdo do response para o arquivo
-		_, err = io.Copy(zipFile, resp.Body)
-		resp.Body.Close()
-		zipFile.Close()
-
-		if err != nil {
-			log.Printf("❌ Erro ao salvar arquivo zip: %v", err)
-			continue
-		}
-
-		// Extrair o ZIP
-		if err := extractZip(zipPath, csvDir); err != nil {
-			log.Printf("❌ Erro ao extrair %s: %v", zipPath, err)
-			continue
-		}
-
-		log.Printf("📦 Extraído para: %s", csvDir)
-
-		// Remover o arquivo ZIP após a extração
-		if err := os.Remove(zipPath); err != nil {
-			log.Printf("⚠️ Erro ao remover arquivo zip: %v", err)
-		} else {
-			log.Printf("🗑️ Arquivo zip removido: %s", zipPath)
-		}
+	// Criar diretórios se não existirem
+	if err := os.MkdirAll(zipDir, 0755); err != nil {
+		log.Printf("Erro ao criar diretório zip: %v", err)
+		return
+	}
+	if err := os.MkdirAll(csvDir, 0755); err != nil {
+		log.Printf("Erro ao criar diretório csv: %v", err)
+		return
 	}
 
-	log.Printf("📅 Processado dia: %s", currentDate.Format("2006-01-02"))
+	monthStr := fmt.Sprintf("%02d", month)
+	dayStr := fmt.Sprintf("%02d", day)
+	fileName := fmt.Sprintf("%s-%s-%d-%s-%s.zip", symbol, interval, year, monthStr, dayStr)
+	url := fmt.Sprintf("%s/%s/%s/%s", baseURL, symbol, interval, fileName)
+	zipPath := filepath.Join(zipDir, fileName)
+	csvFilePath := filepath.Join(csvDir, fileName[:len(fileName)-4]+".csv")
 
-	// Salvar progresso após agendar a goroutine
-	if err := saveProgressData(nil, &currentDate); err != nil {
-		log.Printf("Erro ao salvar progresso: %v", err)
+	// Verificar se o arquivo CSV já existe
+	if _, err := os.Stat(csvFilePath); err == nil {
+		return
+	}
+
+	if isOfflineLink(url) {
+		return
+	}
+
+	*stopGorotines = true
+	log.Printf("⬇️ Baixando: %s", url)
+
+	// Fazer o download do arquivo
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	if mu != nil {
+		mu.Lock()
+	}
+	resp, err := client.Get(url)
+	time.Sleep(1 * time.Second) // Aguardar um segundo antes de continuar
+	if mu != nil {
+		mu.Unlock()
+	}
+	if err != nil {
+		log.Printf("⚠️ Erro ao baixar %s: %v", fileName, err)
+		insertOfflineLink(url)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("❌ Arquivo não encontrado: %s (status %d)", fileName, resp.StatusCode)
+		resp.Body.Close()
+		insertOfflineLink(url)
+		return
+	}
+
+	// Criar arquivo zip
+	zipFile, err := os.Create(zipPath)
+	if err != nil {
+		log.Printf("❌ Erro ao criar arquivo zip: %v", err)
+		resp.Body.Close()
+		return
+	}
+
+	// Copiar conteúdo do response para o arquivo
+	_, err = io.Copy(zipFile, resp.Body)
+	resp.Body.Close()
+	zipFile.Close()
+
+	if err != nil {
+		log.Printf("❌ Erro ao salvar arquivo zip: %v", err)
+		return
+	}
+
+	// Extrair o ZIP
+	if err := extractZip(zipPath, csvDir); err != nil {
+		log.Printf("❌ Erro ao extrair %s: %v", zipPath, err)
+		return
+	}
+
+	log.Printf("📦 Extraído para: %s", csvDir)
+
+	// Remover o arquivo ZIP após a extração
+	if err := os.Remove(zipPath); err != nil {
+		log.Printf("⚠️ Erro ao remover arquivo zip: %v", err)
 	}
 }
 

@@ -76,10 +76,10 @@ func mergeDatasetFile(currentTime time.Time, isHeaderAdded *bool) error {
 	// Gera a data no formato YYYY-MM-DD
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
 
-	currentDatasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets", dateStr)
+	currentDatasetDir := filepath.Join(os.Getenv("DATASET_DIR"), "cache", dateStr)
 	currentDatasetFilePath := filepath.Join(currentDatasetDir, "dataset-"+dateStr+".csv")
 
-	finalDatasetDir := filepath.Join(os.Getenv("DATA_DIR"))
+	finalDatasetDir := filepath.Join(os.Getenv("DATASET_DIR"))
 	finalDatasetFilePath := filepath.Join(finalDatasetDir, "dataset_full.csv")
 
 	// Abre o arquivo de origem
@@ -131,7 +131,7 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	// Gera a data no formato YYYY-MM-DD
 	dateStr := yearStr + "-" + monthStr + "-" + dayStr
 
-	datasetDir := filepath.Join(os.Getenv("DATA_DIR"), "datasets", dateStr)
+	datasetDir := filepath.Join(os.Getenv("DATASET_DIR"), "cache", dateStr)
 	datasetTempFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".tmp")
 	datasetFilePath := filepath.Join(datasetDir, "dataset-"+dateStr+".csv")
 
@@ -326,7 +326,7 @@ func getFileLine(filePath string, lineNumber int) (*models.BinanceKline, error) 
 }
 
 func clearFinalDataset() error {
-	finalDatasetDir := filepath.Join(os.Getenv("DATA_DIR"))
+	finalDatasetDir := filepath.Join(os.Getenv("DATASET_DIR"))
 	finalDatasetFilePath := filepath.Join(finalDatasetDir, "dataset_full.csv")
 
 	// Cria ou abre o arquivo de dataset para escrita (append ou novo)
