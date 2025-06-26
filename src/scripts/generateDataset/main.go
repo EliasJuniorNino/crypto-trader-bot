@@ -209,15 +209,15 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 	for _, crypto := range cryptos {
 		datasetHeader = append(
 			datasetHeader,
-			crypto+"Open",
-			crypto+"High",
-			crypto+"Low",
-			crypto+"Close",
-			crypto+"Volume",
-			crypto+"QuoteAssetVolume",
-			crypto+"NumberOfTrades",
-			crypto+"TakerBuyBaseVolume",
-			crypto+"TakerBuyQuoteVolume",
+			crypto+"_Open",
+			crypto+"_High",
+			crypto+"_Low",
+			crypto+"_Close",
+			crypto+"_Volume",
+			crypto+"_QuoteAssetVolume",
+			crypto+"_NumberOfTrades",
+			crypto+"_TakerBuyBaseVolume",
+			crypto+"_TakerBuyQuoteVolume",
 		)
 	}
 

@@ -18,10 +18,10 @@ COIN = args.coin.upper()
 
 # --- Variáveis de ambiente ---
 load_dotenv()
-DATA_DIR = os.getenv("DATA_DIR")
+DATASET_DIR = os.getenv("DATASET_DIR")
 
 # --- Carrega dados ---
-df = pd.read_csv(f"{DATA_DIR}/dataset_full.csv")
+df = pd.read_csv(f"{DATASET_DIR}/dataset_full.csv")
 
 if f"{COIN}Close" not in df.columns:
     raise ValueError(f"Coluna {COIN}Close não encontrada no CSV.")
@@ -56,7 +56,7 @@ model_rf = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
 model_rf.fit(X_train, y_train)
 
 # --- Salva o modelo ---
-model_dir = f"{DATA_DIR}/modelos/forest"
+model_dir = f"{DATASET_DIR}/models/forest"
 os.makedirs(model_dir, exist_ok=True)
 joblib.dump(model_rf, f"{model_dir}/{COIN}_rf.pkl")
 
