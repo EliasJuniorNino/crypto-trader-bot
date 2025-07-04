@@ -77,6 +77,7 @@ func Main(initialDate time.Time, endDate time.Time, clearFiles bool) {
 		}
 
 		if err := mergeDatasetFile(i, &isHeaderAdded); err != nil {
+			log.Printf("Erro ao adicionar conteudo ao o arquivo de dataset dataset_full.csv: %v", err)
 			return
 		}
 	}
@@ -110,11 +111,14 @@ func mergeDatasetFile(currentTime time.Time, isHeaderAdded *bool) error {
 	}
 	defer destFile.Close()
 
+	sourceFile.Seek(0, 0)
 	scanner := bufio.NewScanner(sourceFile)
 	writer := bufio.NewWriter(destFile)
 
 	linesCount := 0
 	isHeaderLine := true
+
+	// Move scanner para inicio
 	for scanner.Scan() {
 		if isHeaderLine && *isHeaderAdded {
 			isHeaderLine = false

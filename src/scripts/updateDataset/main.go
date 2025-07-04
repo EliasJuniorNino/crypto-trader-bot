@@ -12,21 +12,19 @@ import (
 func Main() {
 	finalDatasetDir := filepath.Join(os.Getenv("DATASET_DIR"))
 	finalDatasetFilePath := filepath.Join(finalDatasetDir, "dataset_full.csv")
-	tempFilePath := filepath.Join(finalDatasetDir, "dataset_full_temp.csv")
+	percentFilePath := filepath.Join(finalDatasetDir, "dataset_percent.csv")
 
 	inFile, err := os.Open(finalDatasetFilePath)
 	if err != nil {
 		log.Fatalf("Erro ao abrir arquivo original: %v", err)
 	}
-	defer inFile.Close()
 
 	reader := csv.NewReader(inFile)
 
-	outFile, err := os.Create(tempFilePath)
+	outFile, err := os.Create(percentFilePath)
 	if err != nil {
 		log.Fatalf("Erro ao criar arquivo temporário: %v", err)
 	}
-	defer outFile.Close()
 
 	writer := csv.NewWriter(outFile)
 	defer writer.Flush()
@@ -62,7 +60,7 @@ func Main() {
 	}
 	err = writer.Write(newHeader)
 	if err != nil {
-		log.Fatalf("Erro ao escrever cabeçalho no arquivo temporário: %v", err)
+		log.Fatalf("Erro ao escrever cabeçalho no arquivo: %v", err)
 	}
 
 	// Lógica de comparação com a linha anterior
@@ -96,7 +94,7 @@ func Main() {
 
 		err = writer.Write(newRecord)
 		if err != nil {
-			log.Fatalf("Erro ao escrever linha no arquivo temporário: %v", err)
+			log.Fatalf("Erro ao escrever linha no arquivo: %v", err)
 		}
 
 		prevRecord = record
@@ -104,11 +102,6 @@ func Main() {
 
 	if err := writer.Error(); err != nil {
 		log.Fatalf("Erro ao finalizar escrita: %v", err)
-	}
-
-	err = os.Rename(tempFilePath, finalDatasetFilePath)
-	if err != nil {
-		log.Fatalf("Erro ao substituir arquivo original: %v", err)
 	}
 
 	log.Printf("Dataset atualizado com percentuais baseados no Close do minuto anterior: %s", finalDatasetFilePath)

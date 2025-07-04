@@ -349,6 +349,7 @@ func downloadAndExtractKlineForSymbol(totalPairs int, symbol, interval string, y
 
 	if isOfflineLink(url) {
 		*stopGorotines = false
+		log.Printf("Link offline: %s", url)
 		return
 	}
 
