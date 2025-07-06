@@ -17,6 +17,7 @@ DATASET_DIR = os.getenv("DATASET_DIR")
 
 # --- Carrega dados ---
 df = pd.read_csv(f"{DATASET_DIR}/dataset_percent.csv")
+df = df[-1440:]
 
 # Encontrar colunas de preços
 price_columns = [col for col in df.columns if col.endswith(('_PercentHigh', '_PercentLow'))]
