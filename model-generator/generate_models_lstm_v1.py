@@ -1,13 +1,17 @@
 import os
+import time
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import tensorflow as tf
+from tensorflow.keras import Input
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
+
+start_time = time.time()
 
 print("GPU disponível:", tf.config.list_physical_devices('GPU'))
 
@@ -17,7 +21,7 @@ DATASET_DIR = os.getenv("DATASET_DIR")
 
 # --- Carrega dados ---
 df = pd.read_csv(f"{DATASET_DIR}/dataset_percent.csv")
-df = df[-1440:]
+df = df[-(1440*30):]
 
 # Encontrar colunas de preços
 price_columns = [col for col in df.columns if col.endswith(('_PercentHigh', '_PercentLow'))]
@@ -48,7 +52,7 @@ def create_sequences_lstm(data, target_indices, look_back=30):
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
 
 for coin in coins:
-    LOOK_BACK = 30
+    LOOK_BACK = 60
 
     # Divisão treino/teste
     split_idx = int(len(scaled_data) * 0.8)
@@ -62,11 +66,14 @@ for coin in coins:
     X_train, y_train = create_sequences_lstm(train_data, target_indices, LOOK_BACK)
     X_test, y_test = create_sequences_lstm(test_data, target_indices, LOOK_BACK)
 
-    # --- Modelo LSTM ---
+    # --- Modelo LSTM com Dropout e mais unidades ---
     model = Sequential([
-        LSTM(64, input_shape=(LOOK_BACK, len(features)), return_sequences=False),
-        Dense(32, activation='relu'),
-        Dense(2)  # previsão para PercentHigh e PercentLow
+      Input(shape=(LOOK_BACK, len(features))),
+      LSTM(128, return_sequences=False),
+      Dropout(0.2),
+      Dense(64, activation='relu'),
+      Dropout(0.2),
+      Dense(2)  # previsão para PercentHigh e PercentLow
     ])
 
     model.compile(optimizer='adam', loss='mse')
@@ -75,7 +82,7 @@ for coin in coins:
     model.fit(
         X_train, y_train,
         validation_split=0.1,
-        epochs=50,
+        epochs=25,
         batch_size=64,
         callbacks=[early_stop],
         verbose=2
@@ -108,7 +115,7 @@ for coin in coins:
     # --- Salvar modelo ---
     model_dir = f"{DATASET_DIR}/models/lstm"
     os.makedirs(model_dir, exist_ok=True)
-    model.save(f"{model_dir}/{coin}_lstm_model")
+    model.save(f"{model_dir}/{coin}_lstm_model.keras")
 
     # --- Salvar métricas ---
     metrics_df = pd.DataFrame([{
@@ -119,3 +126,7 @@ for coin in coins:
         'mae_low': round(mae_low, 4)
     }])
     metrics_df.to_csv(f"{model_dir}/{coin}_metrics.csv", index=False)
+
+end_time = time.time()
+total_time = end_time - start_time
+print(f"\nTempo total de execução: {total_time:.2f} segundos ({total_time / 60:.2f} minutos)")
