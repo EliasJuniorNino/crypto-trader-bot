@@ -1,20 +1,27 @@
 module app
 
-go 1.21.0
-
-toolchain go1.22.12
+go 1.24.0
 
 require (
 	github.com/adshao/go-binance/v2 v2.8.2
 	github.com/joho/godotenv v1.5.1
-	github.com/mattn/go-sqlite3 v1.14.17
+	modernc.org/sqlite v1.42.2
 )
 
 require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	modernc.org/libc v1.66.10 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.11.0 // indirect
 )

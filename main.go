@@ -7,7 +7,6 @@ import (
 	"app/src/scripts/getBinanceData"
 	"app/src/scripts/getDailyPrices"
 	"app/src/scripts/getFearIndex"
-	"app/src/scripts/updateDataset"
 	"app/src/ui"
 	"flag"
 	"fmt"
@@ -36,7 +35,6 @@ func main() {
 	resetCurrentDataset := flag.Bool("ResetCurrentDataset", false, "Subistitui o dataset atual")
 	generateDatasetFlag := flag.Bool("GenerateDataset", false, "Executa GenerateDataset")
 	generateModelsFlag := flag.Bool("GenerateModels", false, "Executa GenerateModels")
-	updateDatasetFlag := flag.Bool("UpdateDataset", false, "Executa UpdateDataset")
 	isSearchForAllFlg := flag.Bool("All", false, "Busca todos")
 	start := flag.String("start", "", "Data inicial (YYYY-MM-DD) para DisableCryptos")
 	end := flag.String("end", "", "Data final (YYYY-MM-DD) para DisableCryptos")
@@ -114,11 +112,6 @@ func main() {
 			return
 		}
 		generateDataset.Main(startDate, endDate, *resetCurrentDataset)
-		executouAlgum = true
-	}
-
-	if *updateDatasetFlag {
-		updateDataset.Main()
 		executouAlgum = true
 	}
 

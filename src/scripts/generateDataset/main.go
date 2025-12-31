@@ -5,7 +5,6 @@ import (
 	"app/src/models"
 	"bufio"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -161,58 +160,56 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 		}
 	}
 
-	klineBasePath := os.Getenv("DATA_DIR") + "/data.binance.vision/data/spot/daily/klines"
-	// Verifica se os arquivos CSV existem para cada criptomoeda
+	klineBasePath := filepath.Join(os.Getenv("DATA_DIR"), "data.binance.vision/data/spot/daily/klines")
+
+	// Pre-carrega todos os klines para a memória (aprox 1440 por crypto)
+	// Mapa: crypto -> []models.BinanceKline
+	allKlines := make(map[string][]*models.BinanceKline)
+
 	for _, crypto := range cryptos {
 		cryptoPair := crypto + "USDT"
 		filePath := filepath.Join(klineBasePath, cryptoPair, "1m", "csv", cryptoPair+"-1m-"+dateStr+".csv")
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			log.Printf("Arquivo não encontrado: %s", filePath)
+
+		klines, err := readAllKlines(filePath)
+		if err != nil {
+			log.Printf("Arquivo não encontrado ou erro ao ler: %s", filePath)
 			return err
 		}
+		if len(klines) < 1440 {
+			log.Printf("Aviso: Arquivo %s tem apenas %d linhas (esperado 1440)", filePath, len(klines))
+		}
+		allKlines[crypto] = klines
 	}
 
-	log.Printf("Todos os arquivos encontrados para a data: %s", dateStr)
+	log.Printf("Todos os arquivos carregados para a data: %s", dateStr)
 
 	// Cria diretório se não existir
-	if _, err := os.Stat(datasetDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(datasetDir, 0755); err != nil {
-			log.Printf("Erro ao criar diretório %s: %v", datasetDir, err)
-			return err
-		}
+	if err := os.MkdirAll(datasetDir, 0755); err != nil {
+		log.Printf("Erro ao criar diretório %s: %v", datasetDir, err)
+		return err
 	}
 
-	// Cria ou abre o arquivo de dataset para escrita (append ou novo)
-	datasetFile, err := os.OpenFile(datasetTempFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	// Cria ou abre o arquivo de dataset para escrita
+	datasetFile, err := os.Create(datasetTempFilePath)
 	if err != nil {
-		log.Printf("Erro ao abrir ou criar o arquivo de dataset %s: %v", datasetTempFilePath, err)
+		log.Printf("Erro ao criar o arquivo temporário %s: %v", datasetTempFilePath, err)
 		return err
 	}
 	defer func() {
+		datasetFile.Close()
 		// Renomeia o arquivo de .tmp para .csv após a escrita bem-sucedida
-		if err := os.Rename(datasetTempFilePath, datasetFilePath); err != nil {
+		if err := os.Rename(datasetTempFilePath, datasetFilePath); err != nil && !os.IsNotExist(err) {
 			log.Printf("Erro ao renomear o arquivo de dataset: %v", err)
 		}
 	}()
-	defer datasetFile.Close()
 
 	// Cria um writer para o arquivo de dataset
 	datasetWriter := bufio.NewWriter(datasetFile)
-	defer datasetWriter.Flush()
-
-	// Limpa o arquivo de dataset se já existir
-	if err := datasetFile.Truncate(0); err != nil {
-		log.Printf("Erro ao limpar o arquivo de dataset %s: %v", datasetFilePath, err)
-		return err
-	}
 
 	// Cria o cabeçalho do dataset
 	datasetHeader := []string{"OpenTime", "fear_api_alternative_me", "fear_coinmarketcap"}
-
-	// Adiciona coluna no cabeçalho para cada criptomoeda
 	for _, crypto := range cryptos {
-		datasetHeader = append(
-			datasetHeader,
+		datasetHeader = append(datasetHeader,
 			crypto+"_Open",
 			crypto+"_High",
 			crypto+"_Low",
@@ -225,64 +222,88 @@ func generateDatasetFile(currentTime time.Time, cryptos []string, clearFiles boo
 		)
 	}
 
-	// Grava o cabeçalho no arquivo de dataset
-	lineStr := strings.Join(datasetHeader, ",") + "\n"
-	if _, err := datasetWriter.WriteString(lineStr); err != nil {
-		log.Printf("Erro ao escrever no arquivo de dataset: %v", err)
+	// Grava o cabeçalho
+	if _, err := datasetWriter.WriteString(strings.Join(datasetHeader, ",") + "\n"); err != nil {
 		return err
 	}
 
-	// Lê cada arquivo CSV e extrai as linhas necessárias
-	for lineNumber := 0; lineNumber < 1440; lineNumber++ {
+	// Processa cada minuto (1440 por dia)
+	for i := 0; i < 1440; i++ {
+		var openTime int64
 		datasetLine := []string{fear_api_alternative_me, fear_coinmarketcap}
 
-		var openTime int64 = 0
 		for _, crypto := range cryptos {
-			cryptoPair := crypto + "USDT"
-			filePath := filepath.Join(klineBasePath, cryptoPair, "1m", "csv", cryptoPair+"-1m-"+dateStr+".csv")
-
-			kline, err := getFileLine(filePath, lineNumber)
-			if err != nil {
-				log.Printf("Erro ao kline para a linha %d do arquivo %s: %v", lineNumber, filePath, err)
-				return err
+			klines := allKlines[crypto]
+			var k *models.BinanceKline
+			if i < len(klines) {
+				k = klines[i]
+			} else {
+				// Fallback para kline vazio se faltar dados
+				k = &models.BinanceKline{}
 			}
 
-			// Grava o timestamp de abertura apenas para a primeira coluna
-			if openTime == 0 {
-				openTime = kline.OpenTime
+			if openTime == 0 && k.OpenTime != 0 {
+				openTime = k.OpenTime
 			}
 
 			datasetLine = append(datasetLine,
-				kline.Open,
-				kline.High,
-				kline.Low,
-				kline.Close,
-				kline.Volume,
-				kline.QuoteAssetVolume,
-				strconv.Itoa(kline.NumberOfTrades),
-				kline.TakerBuyBaseVolume,
-				kline.TakerBuyQuoteVolume,
+				k.Open,
+				k.High,
+				k.Low,
+				k.Close,
+				k.Volume,
+				k.QuoteAssetVolume,
+				strconv.Itoa(k.NumberOfTrades),
+				k.TakerBuyBaseVolume,
+				k.TakerBuyQuoteVolume,
 			)
 		}
 
-		// Só adiciona ao dataset se tiver conteúdo
-		if len(datasetLine) > 0 {
-			// Adiciona o timestamp de abertura na primeira posição
-			datasetLine = append([]string{strconv.FormatInt(openTime, 10)}, datasetLine...)
-
-			// Separa os valores por vírgula e adiciona uma nova linha
-			lineStr := strings.Join(datasetLine, ",") + "\n"
-
-			// Escreve a linha no arquivo de dataset
-			if _, err := datasetWriter.WriteString(lineStr); err != nil {
-				log.Printf("Erro ao escrever no arquivo de dataset: %v", err)
-				return err
-			}
+		// Prepend OpenTime
+		finalLine := append([]string{strconv.FormatInt(openTime, 10)}, datasetLine...)
+		if _, err := datasetWriter.WriteString(strings.Join(finalLine, ",") + "\n"); err != nil {
+			return err
 		}
+	}
+
+	if err := datasetWriter.Flush(); err != nil {
+		return err
 	}
 
 	log.Printf("Dataset gerado com sucesso em: %s", datasetFilePath)
 	return nil
+}
+
+func readAllKlines(filePath string) ([]*models.BinanceKline, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var klines []*models.BinanceKline
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Split(line, ",")
+		if len(fields) >= 12 {
+			klines = append(klines, &models.BinanceKline{
+				OpenTime:            toInt64(fields[0]),
+				Open:                fields[1],
+				High:                fields[2],
+				Low:                 fields[3],
+				Close:               fields[4],
+				Volume:              fields[5],
+				CloseTime:           toInt64(fields[6]),
+				QuoteAssetVolume:    fields[7],
+				NumberOfTrades:      toInt(fields[8]),
+				TakerBuyBaseVolume:  fields[9],
+				TakerBuyQuoteVolume: fields[10],
+				Ignore:              fields[11],
+			})
+		}
+	}
+	return klines, scanner.Err()
 }
 
 func getFearIndex(db *sql.DB, dateStr string, sourceStr string) (string, error) {
@@ -296,50 +317,7 @@ func getFearIndex(db *sql.DB, dateStr string, sourceStr string) (string, error) 
 	if err != nil {
 		return "0", err
 	}
-	return fmt.Sprintf("%v", fearIndex), nil
-}
-
-func getFileLine(filePath string, lineNumber int) (*models.BinanceKline, error) {
-	// Abre arquivo CSV para leitura
-	file, err := os.Open(filePath)
-	if err != nil {
-		log.Printf("Erro ao abrir o arquivo %s: %v", filePath, err)
-		return nil, err
-	}
-	defer file.Close()
-
-	// Cria um scanner para ler o arquivo linha por linha
-	scanner := bufio.NewScanner(file)
-	currentLineNumber := 1
-	for currentLineNumber < lineNumber && scanner.Scan() {
-		currentLineNumber++
-	}
-
-	// Agora o scanner está posicionado na linha desejada (ou no final do arquivo)
-	if scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Split(line, ",")
-		if len(fields) >= 12 {
-			kline := models.BinanceKline{
-				OpenTime:            toInt64(fields[0]),
-				Open:                fields[1],
-				High:                fields[2],
-				Low:                 fields[3],
-				Close:               fields[4],
-				Volume:              fields[5],
-				CloseTime:           toInt64(fields[6]),
-				QuoteAssetVolume:    fields[7],
-				NumberOfTrades:      toInt(fields[8]),
-				TakerBuyBaseVolume:  fields[9],
-				TakerBuyQuoteVolume: fields[10],
-				Ignore:              fields[11],
-			}
-			return &kline, nil
-		} else {
-			return nil, fmt.Errorf("linha %d do arquivo %s não possui colunas suficientes", lineNumber, filePath)
-		}
-	}
-	return nil, fmt.Errorf("não foi possível ler a linha %d do arquivo %s", lineNumber, filePath)
+	return strconv.FormatFloat(fearIndex, 'f', -1, 64), nil
 }
 
 func clearFinalDataset() error {
